@@ -1,0 +1,11 @@
+ mat-toolbar {
+    position: fixed;
+    bottom:0px;
+    height: 56px;
+    width:300px;
+  }
+  
+  mat-nav-list {
+    width:300px;
+    margin-bottom: 56px;
+  }
