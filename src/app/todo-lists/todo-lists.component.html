@@ -1,7 +1,12 @@
 <mat-nav-list dense>
-    <a mat-list-item  *ngFor="let list of todoLists">{{list.name}}
+    <a mat-list-item routerLinkActive="active" *ngFor="let list of todoLists">{{list.name}}
     </a>
 </mat-nav-list>
-<mat-toolbar>
-  <span>My Application</span>
+<mat-toolbar color="primary">
+  <button mat-icon-button (click)="addList()">
+      <mat-icon>add</mat-icon>
+  </button>
+  <button mat-icon-button>
+      <mat-icon>clear</mat-icon>
+  </button>
 </mat-toolbar>

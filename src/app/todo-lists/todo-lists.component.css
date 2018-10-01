@@ -1,11 +1,15 @@
  mat-toolbar {
     position: fixed;
     bottom:0px;
-    height: 56px;
+    height: 40px;
     width:300px;
   }
   
   mat-nav-list {
     width:300px;
-    margin-bottom: 56px;
+    margin-bottom: 40px;
   }
+
+  .mat-nav-list a.active {
+    background: blue;
+}
