@@ -44,7 +44,7 @@ export class TodoItemsComponent implements OnInit {
     this.selectedRowId = list.items.length == 0 ? -1 : list.items[0].id;
   }
 
-  public highlight(index: number, item : TodoListItem) {
+  public highlight(item : TodoListItem) {
     this.selectedRowId = item.id;
   }
 

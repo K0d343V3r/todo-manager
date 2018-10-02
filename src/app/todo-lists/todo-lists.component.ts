@@ -25,7 +25,15 @@ export class TodoListsComponent implements OnInit {
 
   getLists(): void {
     this.todoListInfosProxy.getAllListInfos()
-      .subscribe(infos => this.todoListInfos = infos);
+      .subscribe(infos => this.processInfos(infos));
+  }
+
+  private processInfos(infos : TodoListInfo[]){
+    this.todoListInfos = infos;
+    if (infos.length > 0)
+    {
+      this.router.navigate([`items/${infos[0].id}`]);
+    }
   }
 
   addList(): void {
