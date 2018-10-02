@@ -13,6 +13,7 @@ import { switchMap } from 'rxjs/operators';
 export class TodoItemsComponent implements OnInit {
   todoList$: Observable<TodoList>; 
   todoItems: TodoListItem[];
+  title: string;
   columnsToDisplay: string[] = ['task'];
   @ViewChild(MatTable) table: MatTable<any>;
 
@@ -31,5 +32,6 @@ export class TodoItemsComponent implements OnInit {
 
   private processList(list: TodoList){
     this.todoItems = list.items;
+    this.title = list.name;
   }
 }

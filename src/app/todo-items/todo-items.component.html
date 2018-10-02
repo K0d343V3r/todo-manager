@@ -1,10 +1,16 @@
 <mat-toolbar color="primary">
-    <button mat-icon-button>
-        <mat-icon>add</mat-icon>
-    </button>
-    <button mat-icon-button>
-        <mat-icon>clear</mat-icon>
-    </button>
+    <mat-toolbar-row>
+      <span>{{title}}</span>
+    </mat-toolbar-row>
+      <mat-toolbar-row>
+        <span class="fill-remaining-space"></span>
+        <button mat-icon-button>
+            <mat-icon>add</mat-icon>
+        </button>
+        <button mat-icon-button>
+            <mat-icon>clear</mat-icon>
+        </button>
+  </mat-toolbar-row>
 </mat-toolbar>
 <table mat-table [dataSource]=todoItems>
   <ng-container matColumnDef="task">
