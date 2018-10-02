@@ -1,0 +1,16 @@
+<mat-toolbar color="primary">
+    <button mat-icon-button>
+        <mat-icon>add</mat-icon>
+    </button>
+    <button mat-icon-button>
+        <mat-icon>clear</mat-icon>
+    </button>
+</mat-toolbar>
+<table mat-table [dataSource]=todoItems>
+  <ng-container matColumnDef="task">
+      <th mat-header-cell *matHeaderCellDef> Task </th>
+      <td mat-cell *matCellDef="let item"> {{item.task}} </td>
+  </ng-container>
+  <tr mat-header-row *matHeaderRowDef="columnsToDisplay"></tr>
+  <tr mat-row *matRowDef="let row; columns: columnsToDisplay"></tr>
+</table>
