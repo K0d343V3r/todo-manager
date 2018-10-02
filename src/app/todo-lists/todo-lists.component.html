@@ -1,6 +1,6 @@
 <mat-nav-list dense>
-    <a mat-list-item routerLinkActive="active" routerLink="/items/{{list.id}}"
-      *ngFor="let list of todoLists">{{list.name}}
+    <a mat-list-item routerLinkActive="active" routerLink="/items/{{info.id}}"
+      *ngFor="let info of todoListInfos">{{info.name}}
     </a>
 </mat-nav-list>
 <mat-toolbar color="primary">

@@ -29,7 +29,7 @@ export class TodoListDialogComponent implements OnInit {
     this.dialogRef.close(this.form.value);
   }
 
-  close() {
+  cancel() {
       this.dialogRef.close();
   } 
 }

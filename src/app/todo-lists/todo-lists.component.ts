@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { TodoList, TodoListsProxy } from '../proxies/todo-api-proxies';
+import { TodoListInfo, TodoListInfosProxy, TodoList, TodoListsProxy } from '../proxies/todo-api-proxies';
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoListDialogComponent } from '../todo-list-dialog/todo-list-dialog.component';
+import { Router } from "@angular/router";
 
 @Component({
   selector: 'app-todo-lists',
@@ -10,17 +11,21 @@ import { TodoListDialogComponent } from '../todo-list-dialog/todo-list-dialog.co
 })
 export class TodoListsComponent implements OnInit {
 
-  todoLists: TodoList[];
+  todoListInfos: TodoListInfo[];
 
-  constructor(private todoListsProxy: TodoListsProxy, private dialog: MatDialog) { }
+  constructor(
+    private router: Router,
+    private todoListInfosProxy: TodoListInfosProxy, 
+    private todoListsProxy: TodoListsProxy, 
+    private dialog: MatDialog) { }
 
   ngOnInit() {
     this.getLists();
   }
 
   getLists(): void {
-    this.todoListsProxy.getAllLists()
-      .subscribe(todoLists => this.todoLists = todoLists);
+    this.todoListInfosProxy.getAllListInfos()
+      .subscribe(infos => this.todoListInfos = infos);
   }
 
   addList(): void {
@@ -39,8 +44,12 @@ export class TodoListsComponent implements OnInit {
   private addlist(name:string): void {
     const list = new TodoList();
     list.name = name;
-    list.position = this.todoLists.length;
-    this.todoListsProxy.createList(list)
-      .subscribe(todoList => this.todoLists.push(todoList));
+    list.position = this.todoListInfos.length;
+    this.todoListsProxy.createList(list).subscribe(list => this.processCreation(list));
+  }
+
+  private processCreation(list: TodoList){
+    this.todoListInfos.push(new TodoListInfo({id: list.id, name: list.name}));
+    this.router.navigate([`items/${list.id}`]);
   }
 }
