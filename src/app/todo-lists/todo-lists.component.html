@@ -1,13 +1,16 @@
 <mat-nav-list dense>
-    <a mat-list-item routerLinkActive="active" routerLink="/items/{{info.id}}"
-      *ngFor="let info of todoListInfos; let i = index" (click)="onSelected(i)">{{info.name}}
-    </a>
+  <mat-list-item *ngFor="let info of todoListInfos; let i = index" routerLinkActive="active" routerLink="/items/{{info.id}}" (click)="onSelected(i)">
+    <a matLine>{{info.name}}</a>
+    <button mat-icon-button (click)="editList(i)">
+      <mat-icon>edit</mat-icon>
+    </button>
+  </mat-list-item>
 </mat-nav-list>
 <mat-toolbar color="primary">
   <button mat-icon-button (click)="addList()">
       <mat-icon>add</mat-icon>
   </button>
   <button mat-icon-button [disabled]="todoListInfos.length == 0" (click)="removeList()">
-      <mat-icon>clear</mat-icon>
+      <mat-icon>remove</mat-icon>
   </button>
 </mat-toolbar>

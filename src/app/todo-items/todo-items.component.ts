@@ -77,7 +77,6 @@ export class TodoItemsComponent implements OnInit {
 
   public itemChecked(event): void {
     const item = this.todoItems[this.selectedItemIndex];
-    item.position = this.selectedItemIndex;
     item.done = event.checked;
     this.todoItemsProxy.updateItem(item.id, item).subscribe(item => this.processUpdate(item));
   }

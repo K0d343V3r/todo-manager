@@ -57,8 +57,9 @@ export class TodoListsComponent implements OnInit {
     this.todoListsProxy.createList(list).subscribe(list => this.processCreation(list));
   }
 
-  private processCreation(list: TodoList){
-    this.todoListInfos.push(new TodoListInfo({id: list.id, name: list.name}));
+  private processCreation(list: TodoList) : void {
+    const info = new TodoListInfo({id: list.id, name: list.name, position: list.position});
+    this.todoListInfos.push(info);
     this.selectedInfoIndex = this.todoListInfos.length - 1;
     this.router.navigate([`items/${list.id}`]);
   }
@@ -88,5 +89,24 @@ export class TodoListsComponent implements OnInit {
       }
       this.router.navigate([`items/${this.todoListInfos[this.selectedInfoIndex].id}`]);
     }
+  }
+
+  editList(index : number): void {
+    const dialogConfig = new MatDialogConfig();
+    dialogConfig.disableClose = true;
+    dialogConfig.autoFocus = true;
+    dialogConfig.data = {name: this.todoListInfos[index].name};
+
+    const dialogRef = this.dialog.open(TodoListDialogComponent, dialogConfig);
+
+    dialogRef.afterClosed().subscribe(
+      val => {if (val != null) this.editlist(val.name);}
+    );
+  }
+
+  private editlist(name:string): void {
+    const info = this.todoListInfos[this.selectedInfoIndex];
+    info.name = name;
+    this.todoListInfosProxy.updateListInfo(info.id, info).subscribe();
   }
 }

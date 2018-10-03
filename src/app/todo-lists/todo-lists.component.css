@@ -10,6 +10,6 @@ mat-nav-list {
   margin-bottom: 45px;
 }
 
-.mat-nav-list a.active {
+.mat-nav-list .active {
   background: #B0BEC5;
 }
