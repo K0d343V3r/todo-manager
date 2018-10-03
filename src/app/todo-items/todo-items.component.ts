@@ -18,7 +18,7 @@ export class TodoItemsComponent implements OnInit {
   todoItems: TodoListItem[];
   title: string;
   columnsToDisplay: string[] = ['done', 'task'];
-  selectedRowId: number = -1;
+  selectedItemIndex: number = -1;
 
   @ViewChild(MatTable) table: MatTable<any>;
 
@@ -41,11 +41,11 @@ export class TodoItemsComponent implements OnInit {
     this.todoItems = list.items;
     this.title = list.name;
     this.todoListId = list.id;
-    this.selectedRowId = list.items.length == 0 ? -1 : list.items[0].id;
+    this.selectedItemIndex = list.items.length == 0 ? -1 : 0;
   }
 
-  public highlight(item : TodoListItem) {
-    this.selectedRowId = item.id;
+  public onSelected(index: number) {
+    this.selectedItemIndex = index;
   }
 
   public addItem() : void {
@@ -72,17 +72,30 @@ export class TodoItemsComponent implements OnInit {
   public processCreation(item: TodoListItem){
     this.todoItems.push(item);
     this.table.renderRows();
-    this.selectedRowId = item.id;
+    this.selectedItemIndex = this.todoItems.length - 1;
   }
 
-  public itemChecked(index: number, event): void {
-    const item = this.todoItems[index];
-    item.position = index;
+  public itemChecked(event): void {
+    const item = this.todoItems[this.selectedItemIndex];
+    item.position = this.selectedItemIndex;
     item.done = event.checked;
     this.todoItemsProxy.updateItem(item.id, item).subscribe(item => this.processUpdate(item));
   }
 
-  private processUpdate(item :TodoListItem) : void {
-    
+  private processUpdate(item :TodoListItem) : void { 
+  }
+
+  public removeItem(): void {
+    this.todoItemsProxy.deleteItem(
+      this.todoItems[this.selectedItemIndex].id).subscribe(() => this.processDeletion());
+  }
+
+  private processDeletion(): void {
+    this.todoItems.splice(this.selectedItemIndex, 1);
+    this.table.renderRows();
+    if (this.selectedItemIndex == this.todoItems.length)
+    {
+      this.selectedItemIndex -= 1;
+    }
   }
 }
