@@ -23,3 +23,7 @@ mat-toolbar {
 th:nth-child(1) {
     width: 40px;
 }
+
+th:nth-child(3) {
+    width: 20px;
+}

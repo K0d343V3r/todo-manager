@@ -17,7 +17,7 @@ export class TodoItemsComponent implements OnInit {
   todoList$: Observable<TodoList>; 
   todoItems: TodoListItem[];
   title: string;
-  columnsToDisplay: string[] = ['done', 'task'];
+  columnsToDisplay: string[] = ['done', 'task', 'edit'];
   selectedItemIndex: number = -1;
 
   @ViewChild(MatTable) table: MatTable<any>;
@@ -78,10 +78,7 @@ export class TodoItemsComponent implements OnInit {
   public itemChecked(event): void {
     const item = this.todoItems[this.selectedItemIndex];
     item.done = event.checked;
-    this.todoItemsProxy.updateItem(item.id, item).subscribe(item => this.processUpdate(item));
-  }
-
-  private processUpdate(item :TodoListItem) : void { 
+    this.todoItemsProxy.updateItem(item.id, item).subscribe();
   }
 
   public removeItem(): void {
@@ -96,5 +93,24 @@ export class TodoItemsComponent implements OnInit {
     {
       this.selectedItemIndex -= 1;
     }
+  }
+
+  public editItem(index : number) : void {
+    const dialogConfig = new MatDialogConfig();
+    dialogConfig.disableClose = true;
+    dialogConfig.autoFocus = true;
+    dialogConfig.data = {task: this.todoItems[index].task};
+
+    const dialogRef = this.dialog.open(TodoItemDialogComponent, dialogConfig);
+
+    dialogRef.afterClosed().subscribe(
+      val => {if (val != null) this.editItemInternal(val.task);}
+    ); 
+  }
+
+  private editItemInternal(task:string): void {
+    const item = this.todoItems[this.selectedItemIndex];
+    item.task = task;
+    this.todoItemsProxy.updateItem(item.id, item).subscribe();
   }
 }
