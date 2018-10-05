@@ -10,6 +10,12 @@
 		<button mat-icon-button [disabled]="todoItems.length == 0" (click)="removeItem()">
 			<mat-icon>remove</mat-icon>
 		</button>
+		<button mat-icon-button [disabled]="selectedItemIndex <= 0" (click)="moveUp()">
+			<mat-icon>arrow_upward</mat-icon>
+		</button>
+		<button mat-icon-button [disabled]="selectedItemIndex == todoItems.length - 1" (click)="moveDown()">
+			<mat-icon>arrow_downward</mat-icon>
+		</button>
 	</mat-toolbar-row>
 </mat-toolbar>
 <table mat-table [dataSource]=todoItems>

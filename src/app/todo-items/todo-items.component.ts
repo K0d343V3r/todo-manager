@@ -112,4 +112,23 @@ export class TodoItemsComponent implements OnInit {
 		item.task = task;
 		this.todoItemsProxy.updateItem(item.id, item).subscribe();
 	}
+
+	moveUp(): void {
+		const item = this.todoItems[this.selectedItemIndex];
+		item.position = this.selectedItemIndex - 1;	
+		this.todoItemsProxy.updateItem(item.id, item).subscribe(() => this.processMove(true));
+	}
+
+	private processMove(up: boolean): void {
+		const deletedItems = this.todoItems.splice(this.selectedItemIndex, 1);
+		this.selectedItemIndex = up ? this.selectedItemIndex - 1 : this.selectedItemIndex + 1;
+		this.todoItems.splice(this.selectedItemIndex, 0, deletedItems[0]);
+		this.table.renderRows();
+	}
+
+	moveDown(): void {
+		const item = this.todoItems[this.selectedItemIndex];
+		item.position = this.selectedItemIndex + 1;	
+		this.todoItemsProxy.updateItem(item.id, item).subscribe(() => this.processMove(false));
+	}
 }
