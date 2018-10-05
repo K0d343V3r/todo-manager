@@ -14,4 +14,10 @@
 	<button mat-icon-button [disabled]="todoListInfos.length == 0" (click)="removeList()">
 		<mat-icon>remove</mat-icon>
 	</button>
+	<button mat-icon-button [disabled]="selectedInfoIndex <= 0" (click)="moveUp()">
+		<mat-icon>arrow_upward</mat-icon>
+	</button>
+	<button mat-icon-button [disabled]="selectedInfoIndex == todoListInfos.length - 1" (click)="moveDown()">
+		<mat-icon>arrow_downward</mat-icon>
+	</button>
 </mat-toolbar>

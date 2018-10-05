@@ -76,6 +76,7 @@ export class TodoListsComponent implements OnInit {
 		this.todoListInfos.splice(this.selectedInfoIndex, 1);
 		if (this.todoListInfos.length == 0) {
 			// list is empty, let's go home
+			this.selectedInfoIndex = -1;
 			this.router.navigate(['']);
 		}
 		else {
@@ -104,5 +105,23 @@ export class TodoListsComponent implements OnInit {
 		const info = this.todoListInfos[this.selectedInfoIndex];
 		info.name = name;
 		this.todoListInfosProxy.updateListInfo(info.id, info).subscribe();
+	}
+
+  moveUp(): void {
+		const info = this.todoListInfos[this.selectedInfoIndex];
+		info.position = this.selectedInfoIndex - 1;	
+		this.todoListInfosProxy.updateListInfo(info.id, info).subscribe(() => this.processMove(true));
+	}
+
+	private processMove(up: boolean): void {
+		const deletedInfos = this.todoListInfos.splice(this.selectedInfoIndex, 1);
+		this.selectedInfoIndex = up ? this.selectedInfoIndex - 1 : this.selectedInfoIndex + 1;
+		this.todoListInfos.splice(this.selectedInfoIndex, 0, deletedInfos[0]);
+	}
+
+	moveDown(): void {
+		const info = this.todoListInfos[this.selectedInfoIndex];
+		info.position = this.selectedInfoIndex + 1;	
+		this.todoListInfosProxy.updateListInfo(info.id, info).subscribe(() => this.processMove(false));
 	}
 }
