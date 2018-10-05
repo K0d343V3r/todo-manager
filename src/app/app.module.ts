@@ -13,23 +13,23 @@ import { TodoItemsComponent } from './todo-items/todo-items.component';
 import { TodoItemDialogComponent } from './todo-item-dialog/todo-item-dialog.component';
 
 @NgModule({
-	declarations: [
-		AppComponent,
-		TodoListsComponent,
-		TodoListDialogComponent,
-		TodoItemsComponent,
-		TodoItemDialogComponent
-	],
-	imports: [
-		BrowserModule,
-		BrowserAnimationsModule,
-		HttpClientModule,
-		ReactiveFormsModule,
-		RoutingModule,
-		MaterialModule
-	],
-	providers: [TodoListInfosProxy, TodoListsProxy, TodoItemsProxy],
-	bootstrap: [AppComponent],
-	entryComponents: [TodoListDialogComponent, TodoItemDialogComponent]
+  declarations: [
+    AppComponent,
+    TodoListsComponent,
+    TodoListDialogComponent,
+    TodoItemsComponent,
+    TodoItemDialogComponent
+  ],
+  imports: [
+    BrowserModule,
+    BrowserAnimationsModule,
+    HttpClientModule,
+    ReactiveFormsModule,
+    RoutingModule,
+    MaterialModule
+  ],
+  providers: [TodoListInfosProxy, TodoListsProxy, TodoItemsProxy],
+  bootstrap: [AppComponent],
+  entryComponents: [TodoListDialogComponent, TodoItemDialogComponent]
 })
 export class AppModule { }
