@@ -13,3 +13,8 @@ mat-nav-list {
 .mat-nav-list .active {
   background: #B0BEC5;
 }
+
+.item-count {
+  margin-right: 10px;
+  font-size: xx-small
+}

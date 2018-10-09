@@ -351,6 +351,7 @@ export class TodoItemsProxy implements ITodoItemsProxy {
 
 export interface ITodoListInfosProxy {
     getAllListInfos(): Observable<TodoListInfo[] | null>;
+    getListInfo(id: number): Observable<TodoListInfo | null>;
     updateListInfo(id: number, info: TodoListInfo | null): Observable<TodoListInfo | null>;
 }
 
@@ -415,6 +416,57 @@ export class TodoListInfosProxy implements ITodoListInfosProxy {
             }));
         }
         return _observableOf<TodoListInfo[] | null>(<any>null);
+    }
+
+    getListInfo(id: number): Observable<TodoListInfo | null> {
+        let url_ = this.baseUrl + "/api/TodoListInfos/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id)); 
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetListInfo(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetListInfo(<any>response_);
+                } catch (e) {
+                    return <Observable<TodoListInfo | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<TodoListInfo | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processGetListInfo(response: HttpResponseBase): Observable<TodoListInfo | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 ? TodoListInfo.fromJS(resultData200) : <any>null;
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<TodoListInfo | null>(<any>null);
     }
 
     updateListInfo(id: number, info: TodoListInfo | null): Observable<TodoListInfo | null> {
@@ -866,6 +918,7 @@ export interface ITodoListItem {
 }
 
 export class TodoListInfo implements ITodoListInfo {
+    itemCount!: number;
     id!: number;
     name?: string | undefined;
     position!: number;
@@ -881,6 +934,7 @@ export class TodoListInfo implements ITodoListInfo {
 
     init(data?: any) {
         if (data) {
+            this.itemCount = data["itemCount"];
             this.id = data["id"];
             this.name = data["name"];
             this.position = data["position"];
@@ -896,6 +950,7 @@ export class TodoListInfo implements ITodoListInfo {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
+        data["itemCount"] = this.itemCount;
         data["id"] = this.id;
         data["name"] = this.name;
         data["position"] = this.position;
@@ -904,6 +959,7 @@ export class TodoListInfo implements ITodoListInfo {
 }
 
 export interface ITodoListInfo {
+    itemCount: number;
     id: number;
     name?: string | undefined;
     position: number;
@@ -911,6 +967,7 @@ export interface ITodoListInfo {
 
 export class TodoList extends TodoListInfo implements ITodoList {
     items?: TodoListItem[] | undefined;
+    itemCount!: number;
 
     constructor(data?: ITodoList) {
         super(data);
@@ -924,6 +981,7 @@ export class TodoList extends TodoListInfo implements ITodoList {
                 for (let item of data["items"])
                     this.items.push(TodoListItem.fromJS(item));
             }
+            this.itemCount = data["itemCount"];
         }
     }
 
@@ -941,6 +999,7 @@ export class TodoList extends TodoListInfo implements ITodoList {
             for (let item of this.items)
                 data["items"].push(item.toJSON());
         }
+        data["itemCount"] = this.itemCount;
         super.toJSON(data);
         return data; 
     }
@@ -948,6 +1007,7 @@ export class TodoList extends TodoListInfo implements ITodoList {
 
 export interface ITodoList extends ITodoListInfo {
     items?: TodoListItem[] | undefined;
+    itemCount: number;
 }
 
 export interface FileResponse {

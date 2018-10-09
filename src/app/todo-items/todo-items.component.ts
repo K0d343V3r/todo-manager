@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoItemDialogComponent } from '../todo-item-dialog/todo-item-dialog.component';
+import { TodoListService } from "../services/todo-list.service"
 
 @Component({
   selector: 'app-todo-items',
@@ -23,6 +24,7 @@ export class TodoItemsComponent implements OnInit {
   @ViewChild(MatTable) table: MatTable<any>;
 
   constructor(
+    private todoListService: TodoListService,
     private route: ActivatedRoute,
     private todoListsProxy: TodoListsProxy,
     private todoItemsProxy: TodoItemsProxy,
@@ -73,6 +75,7 @@ export class TodoItemsComponent implements OnInit {
     this.todoItems.push(item);
     this.table.renderRows();
     this.selectedItemIndex = this.todoItems.length - 1;
+    this.todoListService.fireListChanged(this.todoListId);
   }
 
   public itemChecked(event): void {
@@ -92,6 +95,7 @@ export class TodoItemsComponent implements OnInit {
     if (this.selectedItemIndex == this.todoItems.length) {
       this.selectedItemIndex -= 1;
     }
+    this.todoListService.fireListChanged(this.todoListId);
   }
 
   public editItem(index: number): void {

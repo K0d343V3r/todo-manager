@@ -3,6 +3,7 @@ import { TodoListInfo, TodoListInfosProxy, TodoList, TodoListsProxy } from '../p
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoListDialogComponent } from '../todo-list-dialog/todo-list-dialog.component';
 import { ActivatedRoute, Router } from "@angular/router";
+import { TodoListService } from "../services/todo-list.service"
 
 @Component({
   selector: 'app-todo-lists',
@@ -14,6 +15,7 @@ export class TodoListsComponent implements OnInit {
   todoListInfos: TodoListInfo[];
 
   constructor(
+    private todoListService: TodoListService,
     private router: Router,
     private todoListInfosProxy: TodoListInfosProxy,
     private todoListsProxy: TodoListsProxy,
@@ -21,6 +23,21 @@ export class TodoListsComponent implements OnInit {
 
   ngOnInit() {
     this.getLists();
+
+    this.todoListService.listChanged$.subscribe(id => this.processListChange(id));
+  }
+
+  processListChange(id: number) {
+    // let's assume the currently selected list changed
+    if (this.todoListInfos[this.selectedInfoIndex].id == id)
+    {
+      this.todoListInfosProxy.getListInfo(id).subscribe(info => this.processInfo(info));
+    }
+  }
+
+  processInfo(info: TodoListInfo)
+  {
+    this.todoListInfos.splice(this.selectedInfoIndex, 1, info);
   }
 
   getLists(): void {
@@ -57,7 +74,7 @@ export class TodoListsComponent implements OnInit {
   }
 
   private processCreation(list: TodoList): void {
-    const info = new TodoListInfo({ id: list.id, name: list.name, position: list.position });
+    const info = new TodoListInfo({ id: list.id, name: list.name, position: list.position, itemCount: list.itemCount });
     this.todoListInfos.push(info);
     this.selectedInfoIndex = this.todoListInfos.length - 1;
     this.router.navigate([`items/${list.id}`]);
