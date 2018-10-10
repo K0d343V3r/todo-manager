@@ -865,14 +865,11 @@ export class TodoListsProxy implements ITodoListsProxy {
     }
 }
 
-export class TodoListItem implements ITodoListItem {
+export class EntityBase implements IEntityBase {
     id!: number;
-    task?: string | undefined;
-    done!: boolean;
     position!: number;
-    todoListId!: number;
 
-    constructor(data?: ITodoListItem) {
+    constructor(data?: IEntityBase) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -884,9 +881,44 @@ export class TodoListItem implements ITodoListItem {
     init(data?: any) {
         if (data) {
             this.id = data["id"];
+            this.position = data["position"];
+        }
+    }
+
+    static fromJS(data: any): EntityBase {
+        data = typeof data === 'object' ? data : {};
+        let result = new EntityBase();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["position"] = this.position;
+        return data; 
+    }
+}
+
+export interface IEntityBase {
+    id: number;
+    position: number;
+}
+
+export class TodoListItem extends EntityBase implements ITodoListItem {
+    task?: string | undefined;
+    done!: boolean;
+    todoListId!: number;
+
+    constructor(data?: ITodoListItem) {
+        super(data);
+    }
+
+    init(data?: any) {
+        super.init(data);
+        if (data) {
             this.task = data["task"];
             this.done = data["done"];
-            this.position = data["position"];
             this.todoListId = data["todoListId"];
         }
     }
@@ -900,44 +932,64 @@ export class TodoListItem implements ITodoListItem {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
         data["task"] = this.task;
         data["done"] = this.done;
-        data["position"] = this.position;
         data["todoListId"] = this.todoListId;
+        super.toJSON(data);
         return data; 
     }
 }
 
-export interface ITodoListItem {
-    id: number;
+export interface ITodoListItem extends IEntityBase {
     task?: string | undefined;
     done: boolean;
-    position: number;
     todoListId: number;
 }
 
-export class TodoListInfo implements ITodoListInfo {
-    itemCount!: number;
-    id!: number;
+export class TodoListBase extends EntityBase implements ITodoListBase {
     name?: string | undefined;
-    position!: number;
 
-    constructor(data?: ITodoListInfo) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+    constructor(data?: ITodoListBase) {
+        super(data);
     }
 
     init(data?: any) {
+        super.init(data);
+        if (data) {
+            this.name = data["name"];
+        }
+    }
+
+    static fromJS(data: any): TodoListBase {
+        data = typeof data === 'object' ? data : {};
+        let result = new TodoListBase();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        super.toJSON(data);
+        return data; 
+    }
+}
+
+export interface ITodoListBase extends IEntityBase {
+    name?: string | undefined;
+}
+
+export class TodoListInfo extends TodoListBase implements ITodoListInfo {
+    itemCount!: number;
+
+    constructor(data?: ITodoListInfo) {
+        super(data);
+    }
+
+    init(data?: any) {
+        super.init(data);
         if (data) {
             this.itemCount = data["itemCount"];
-            this.id = data["id"];
-            this.name = data["name"];
-            this.position = data["position"];
         }
     }
 
@@ -951,23 +1003,17 @@ export class TodoListInfo implements ITodoListInfo {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["itemCount"] = this.itemCount;
-        data["id"] = this.id;
-        data["name"] = this.name;
-        data["position"] = this.position;
+        super.toJSON(data);
         return data; 
     }
 }
 
-export interface ITodoListInfo {
+export interface ITodoListInfo extends ITodoListBase {
     itemCount: number;
-    id: number;
-    name?: string | undefined;
-    position: number;
 }
 
-export class TodoList extends TodoListInfo implements ITodoList {
+export class TodoList extends TodoListBase implements ITodoList {
     items?: TodoListItem[] | undefined;
-    itemCount!: number;
 
     constructor(data?: ITodoList) {
         super(data);
@@ -981,7 +1027,6 @@ export class TodoList extends TodoListInfo implements ITodoList {
                 for (let item of data["items"])
                     this.items.push(TodoListItem.fromJS(item));
             }
-            this.itemCount = data["itemCount"];
         }
     }
 
@@ -999,15 +1044,13 @@ export class TodoList extends TodoListInfo implements ITodoList {
             for (let item of this.items)
                 data["items"].push(item.toJSON());
         }
-        data["itemCount"] = this.itemCount;
         super.toJSON(data);
         return data; 
     }
 }
 
-export interface ITodoList extends ITodoListInfo {
+export interface ITodoList extends ITodoListBase {
     items?: TodoListItem[] | undefined;
-    itemCount: number;
 }
 
 export interface FileResponse {

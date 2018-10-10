@@ -2,7 +2,7 @@
   <mat-list-item *ngFor="let info of todoListInfos; let i = index" routerLinkActive="active" routerLink="/items/{{info.id}}"
     (click)="onSelected(i)">
     <a matLine>{{info.name}}</a>
-    <span class="item-count">{{info.itemCount}}</span>
+    <span class="item-count" *ngIf="info.itemCount > 0">{{info.itemCount}}</span>
     <button mat-icon-button (click)="editList(i)">
       <mat-icon>edit</mat-icon>
     </button>
