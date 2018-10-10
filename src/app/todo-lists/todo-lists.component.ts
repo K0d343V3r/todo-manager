@@ -29,14 +29,12 @@ export class TodoListsComponent implements OnInit {
 
   processListChange(id: number) {
     // let's assume the currently selected list changed
-    if (this.todoListInfos[this.selectedInfoIndex].id == id)
-    {
+    if (this.todoListInfos[this.selectedInfoIndex].id == id) {
       this.todoListInfosProxy.getListInfo(id).subscribe(info => this.processInfo(info));
     }
   }
 
-  processInfo(info: TodoListInfo)
-  {
+  processInfo(info: TodoListInfo) {
     this.todoListInfos.splice(this.selectedInfoIndex, 1, info);
   }
 
@@ -74,7 +72,7 @@ export class TodoListsComponent implements OnInit {
   }
 
   private processCreation(list: TodoList): void {
-    const info = new TodoListInfo({ id: list.id, name: list.name, position: list.position, itemCount: list.itemCount });
+    const info = new TodoListInfo({ id: list.id, name: list.name, position: list.position, itemCount: list.items.length });
     this.todoListInfos.push(info);
     this.selectedInfoIndex = this.todoListInfos.length - 1;
     this.router.navigate([`items/${list.id}`]);
