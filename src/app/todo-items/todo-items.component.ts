@@ -5,8 +5,9 @@ import { MatTable } from '@angular/material';
 import { Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { MatDialog, MatDialogConfig } from "@angular/material";
-import { TodoItemDialogComponent } from '../todo-item-dialog/todo-item-dialog.component';
+import { TodoItemDialogComponent, TodoItemDialogData } from '../todo-item-dialog/todo-item-dialog.component';
 import { TodoListService } from "../services/todo-list.service"
+import { DueDateOption, DueDateService } from '../services/due-date.service'
 
 @Component({
   selector: 'app-todo-items',
@@ -16,14 +17,15 @@ import { TodoListService } from "../services/todo-list.service"
 export class TodoItemsComponent implements OnInit {
   private todoListId: number;
   todoList$: Observable<TodoList>;
-  todoItems: TodoListItem[];
+  todoItems: TodoListItem[] = [];
   title: string;
-  columnsToDisplay: string[] = ['done', 'task', 'edit'];
+  columnsToDisplay: string[] = ['done', 'task', 'dueDate', 'edit'];
   selectedItemIndex: number = -1;
 
   @ViewChild(MatTable) table: MatTable<any>;
 
   constructor(
+    private dueDateService: DueDateService,
     private todoListService: TodoListService,
     private route: ActivatedRoute,
     private todoListsProxy: TodoListsProxy,
@@ -54,19 +56,19 @@ export class TodoItemsComponent implements OnInit {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
-    dialogConfig.data = {};
 
     const dialogRef = this.dialog.open(TodoItemDialogComponent, dialogConfig);
 
     dialogRef.afterClosed().subscribe(
-      val => { if (val != null) this.addItemInternal(val.task); }
+      data => { if (data != null) this.addItemInternal(data); }
     );
   }
 
-  private addItemInternal(task: string): void {
+  private addItemInternal(data: TodoItemDialogData): void {
     const item = new TodoListItem();
     item.todoListId = this.todoListId;
-    item.task = task;
+    item.task = data.task;
+    item.dueDate = data.dueDate;
     item.position = this.todoItems.length;
     this.todoItemsProxy.createItem(item).subscribe(item => this.processCreation(item));
   }
@@ -102,18 +104,21 @@ export class TodoItemsComponent implements OnInit {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
-    dialogConfig.data = { task: this.todoItems[index].task };
+    dialogConfig.data = new TodoItemDialogData(
+      this.todoItems[index].task,
+      this.todoItems[index].dueDate);
 
     const dialogRef = this.dialog.open(TodoItemDialogComponent, dialogConfig);
 
     dialogRef.afterClosed().subscribe(
-      val => { if (val != null) this.editItemInternal(val.task); }
+      data => { if (data != null) this.editItemInternal(data); }
     );
   }
 
-  private editItemInternal(task: string): void {
+  private editItemInternal(data: TodoItemDialogData): void {
     const item = this.todoItems[this.selectedItemIndex];
-    item.task = task;
+    item.task = data.task;
+    item.dueDate = data.dueDate;
     this.todoItemsProxy.updateItem(item.id, item).subscribe();
   }
 
@@ -134,5 +139,14 @@ export class TodoItemsComponent implements OnInit {
     const item = this.todoItems[this.selectedItemIndex];
     item.position = this.selectedItemIndex + 1;
     this.todoItemsProxy.updateItem(item.id, item).subscribe(() => this.processMove(false));
+  }
+
+  getDueString(date: Date): string {
+    const option = this.dueDateService.dateToEnum(date);
+    if (option == DueDateOption.None) {
+      return "";
+    } else {
+      return this.dueDateService.toString(option, date);
+    }
   }
 }

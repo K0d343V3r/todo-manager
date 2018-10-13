@@ -1,7 +1,19 @@
 <h2 mat-dialog-title>{{title}}</h2>
 <mat-dialog-content [formGroup]="form1">
   <mat-form-field>
-    <input matInput placeholder="Task:" formControlName="task">
+    <input matInput placeholder="Task" formControlName="task">
+  </mat-form-field>
+  <mat-form-field>
+    <mat-select placeholder="Due date" [(value)]="selectedDueOption" formControlName="due">
+      <mat-option *ngFor="let option of dueDateOptions" [value]="option.value">
+        {{option.viewValue}}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field *ngIf="selectedDueOption == dueDateOptions.length - 1">
+    <input matInput [matDatepicker]="picker" placeholder="Choose a date" formControlName="dueDate">
+    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+    <mat-datepicker #picker></mat-datepicker>
   </mat-form-field>
 </mat-dialog-content>
 

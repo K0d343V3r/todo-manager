@@ -12,7 +12,7 @@ import { TodoListService } from "../services/todo-list.service"
 })
 export class TodoListsComponent implements OnInit {
   selectedInfoIndex: number = -1;
-  todoListInfos: TodoListInfo[];
+  todoListInfos: TodoListInfo[] = [];
 
   constructor(
     private todoListService: TodoListService,
