@@ -13,6 +13,186 @@ import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angula
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
 
+export interface ITodoElementsProxy {
+    getAllListElements(): Observable<TodoElement[] | null>;
+    getListElement(id: number): Observable<TodoElement | null>;
+    updateListElement(id: number, element: TodoElement | null): Observable<TodoElement | null>;
+}
+
+@Injectable()
+export class TodoElementsProxy implements ITodoElementsProxy {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ? baseUrl : "https://localhost:44310";
+    }
+
+    getAllListElements(): Observable<TodoElement[] | null> {
+        let url_ = this.baseUrl + "/api/TodoElements/lists";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetAllListElements(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetAllListElements(<any>response_);
+                } catch (e) {
+                    return <Observable<TodoElement[] | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<TodoElement[] | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processGetAllListElements(response: HttpResponseBase): Observable<TodoElement[] | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (resultData200 && resultData200.constructor === Array) {
+                result200 = [];
+                for (let item of resultData200)
+                    result200.push(TodoElement.fromJS(item));
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<TodoElement[] | null>(<any>null);
+    }
+
+    getListElement(id: number): Observable<TodoElement | null> {
+        let url_ = this.baseUrl + "/api/TodoElements/lists/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id)); 
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetListElement(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetListElement(<any>response_);
+                } catch (e) {
+                    return <Observable<TodoElement | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<TodoElement | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processGetListElement(response: HttpResponseBase): Observable<TodoElement | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 ? TodoElement.fromJS(resultData200) : <any>null;
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<TodoElement | null>(<any>null);
+    }
+
+    updateListElement(id: number, element: TodoElement | null): Observable<TodoElement | null> {
+        let url_ = this.baseUrl + "/api/TodoElements/lists/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id)); 
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(element);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json", 
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processUpdateListElement(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdateListElement(<any>response_);
+                } catch (e) {
+                    return <Observable<TodoElement | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<TodoElement | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processUpdateListElement(response: HttpResponseBase): Observable<TodoElement | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 ? TodoElement.fromJS(resultData200) : <any>null;
+            return _observableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<TodoElement | null>(<any>null);
+    }
+}
+
 export interface ITodoItemsProxy {
     getAllItems(): Observable<TodoListItem[] | null>;
     createItem(item: TodoListItem | null): Observable<TodoListItem | null>;
@@ -346,186 +526,6 @@ export class TodoItemsProxy implements ITodoItemsProxy {
             }));
         }
         return _observableOf<FileResponse | null>(<any>null);
-    }
-}
-
-export interface ITodoListInfosProxy {
-    getAllListInfos(): Observable<TodoListInfo[] | null>;
-    getListInfo(id: number): Observable<TodoListInfo | null>;
-    updateListInfo(id: number, info: TodoListInfo | null): Observable<TodoListInfo | null>;
-}
-
-@Injectable()
-export class TodoListInfosProxy implements ITodoListInfosProxy {
-    private http: HttpClient;
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
-        this.http = http;
-        this.baseUrl = baseUrl ? baseUrl : "https://localhost:44310";
-    }
-
-    getAllListInfos(): Observable<TodoListInfo[] | null> {
-        let url_ = this.baseUrl + "/api/TodoListInfos";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_ : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetAllListInfos(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
-                try {
-                    return this.processGetAllListInfos(<any>response_);
-                } catch (e) {
-                    return <Observable<TodoListInfo[] | null>><any>_observableThrow(e);
-                }
-            } else
-                return <Observable<TodoListInfo[] | null>><any>_observableThrow(response_);
-        }));
-    }
-
-    protected processGetAllListInfos(response: HttpResponseBase): Observable<TodoListInfo[] | null> {
-        const status = response.status;
-        const responseBlob = 
-            response instanceof HttpResponse ? response.body : 
-            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
-
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            if (resultData200 && resultData200.constructor === Array) {
-                result200 = [];
-                for (let item of resultData200)
-                    result200.push(TodoListInfo.fromJS(item));
-            }
-            return _observableOf(result200);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            }));
-        }
-        return _observableOf<TodoListInfo[] | null>(<any>null);
-    }
-
-    getListInfo(id: number): Observable<TodoListInfo | null> {
-        let url_ = this.baseUrl + "/api/TodoListInfos/{id}";
-        if (id === undefined || id === null)
-            throw new Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id)); 
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_ : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetListInfo(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
-                try {
-                    return this.processGetListInfo(<any>response_);
-                } catch (e) {
-                    return <Observable<TodoListInfo | null>><any>_observableThrow(e);
-                }
-            } else
-                return <Observable<TodoListInfo | null>><any>_observableThrow(response_);
-        }));
-    }
-
-    protected processGetListInfo(response: HttpResponseBase): Observable<TodoListInfo | null> {
-        const status = response.status;
-        const responseBlob = 
-            response instanceof HttpResponse ? response.body : 
-            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
-
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = resultData200 ? TodoListInfo.fromJS(resultData200) : <any>null;
-            return _observableOf(result200);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            }));
-        }
-        return _observableOf<TodoListInfo | null>(<any>null);
-    }
-
-    updateListInfo(id: number, info: TodoListInfo | null): Observable<TodoListInfo | null> {
-        let url_ = this.baseUrl + "/api/TodoListInfos/{id}";
-        if (id === undefined || id === null)
-            throw new Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id)); 
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(info);
-
-        let options_ : any = {
-            body: content_,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json", 
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processUpdateListInfo(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
-                try {
-                    return this.processUpdateListInfo(<any>response_);
-                } catch (e) {
-                    return <Observable<TodoListInfo | null>><any>_observableThrow(e);
-                }
-            } else
-                return <Observable<TodoListInfo | null>><any>_observableThrow(response_);
-        }));
-    }
-
-    protected processUpdateListInfo(response: HttpResponseBase): Observable<TodoListInfo | null> {
-        const status = response.status;
-        const responseBlob = 
-            response instanceof HttpResponse ? response.body : 
-            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
-
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = resultData200 ? TodoListInfo.fromJS(resultData200) : <any>null;
-            return _observableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
-            return throwException("A server error occurred.", status, _responseText, _headers);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            }));
-        }
-        return _observableOf<TodoListInfo | null>(<any>null);
     }
 }
 
@@ -905,6 +905,72 @@ export interface IEntityBase {
     position: number;
 }
 
+export class TodoElementBase extends EntityBase implements ITodoElementBase {
+    name?: string | undefined;
+
+    constructor(data?: ITodoElementBase) {
+        super(data);
+    }
+
+    init(data?: any) {
+        super.init(data);
+        if (data) {
+            this.name = data["name"];
+        }
+    }
+
+    static fromJS(data: any): TodoElementBase {
+        data = typeof data === 'object' ? data : {};
+        let result = new TodoElementBase();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        super.toJSON(data);
+        return data; 
+    }
+}
+
+export interface ITodoElementBase extends IEntityBase {
+    name?: string | undefined;
+}
+
+export class TodoElement extends TodoElementBase implements ITodoElement {
+    childCount!: number;
+
+    constructor(data?: ITodoElement) {
+        super(data);
+    }
+
+    init(data?: any) {
+        super.init(data);
+        if (data) {
+            this.childCount = data["childCount"];
+        }
+    }
+
+    static fromJS(data: any): TodoElement {
+        data = typeof data === 'object' ? data : {};
+        let result = new TodoElement();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["childCount"] = this.childCount;
+        super.toJSON(data);
+        return data; 
+    }
+}
+
+export interface ITodoElement extends ITodoElementBase {
+    childCount: number;
+}
+
 export class TodoListItem extends EntityBase implements ITodoListItem {
     task?: string | undefined;
     done!: boolean;
@@ -950,73 +1016,7 @@ export interface ITodoListItem extends IEntityBase {
     todoListId: number;
 }
 
-export class TodoListBase extends EntityBase implements ITodoListBase {
-    name?: string | undefined;
-
-    constructor(data?: ITodoListBase) {
-        super(data);
-    }
-
-    init(data?: any) {
-        super.init(data);
-        if (data) {
-            this.name = data["name"];
-        }
-    }
-
-    static fromJS(data: any): TodoListBase {
-        data = typeof data === 'object' ? data : {};
-        let result = new TodoListBase();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["name"] = this.name;
-        super.toJSON(data);
-        return data; 
-    }
-}
-
-export interface ITodoListBase extends IEntityBase {
-    name?: string | undefined;
-}
-
-export class TodoListInfo extends TodoListBase implements ITodoListInfo {
-    itemCount!: number;
-
-    constructor(data?: ITodoListInfo) {
-        super(data);
-    }
-
-    init(data?: any) {
-        super.init(data);
-        if (data) {
-            this.itemCount = data["itemCount"];
-        }
-    }
-
-    static fromJS(data: any): TodoListInfo {
-        data = typeof data === 'object' ? data : {};
-        let result = new TodoListInfo();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["itemCount"] = this.itemCount;
-        super.toJSON(data);
-        return data; 
-    }
-}
-
-export interface ITodoListInfo extends ITodoListBase {
-    itemCount: number;
-}
-
-export class TodoList extends TodoListBase implements ITodoList {
+export class TodoList extends TodoElementBase implements ITodoList {
     items?: TodoListItem[] | undefined;
 
     constructor(data?: ITodoList) {
@@ -1053,7 +1053,7 @@ export class TodoList extends TodoListBase implements ITodoList {
     }
 }
 
-export interface ITodoList extends ITodoListBase {
+export interface ITodoList extends ITodoElementBase {
     items?: TodoListItem[] | undefined;
 }
 
@@ -1089,10 +1089,7 @@ export class SwaggerException extends Error {
 }
 
 function throwException(message: string, status: number, response: string, headers: { [key: string]: any; }, result?: any): Observable<any> {
-    if(result !== null && result !== undefined)
-        return _observableThrow(result);
-    else
-        return _observableThrow(new SwaggerException(message, status, response, headers, null));
+    return _observableThrow(new SwaggerException(message, status, response, headers, result));
 }
 
 function blobToText(blob: any): Observable<string> {
