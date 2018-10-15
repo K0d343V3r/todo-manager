@@ -130,14 +130,13 @@ export class TodoListsComponent implements OnInit {
   }
 
   private move(up: boolean) {
-    const element = this.todoElements[this.selectedElementIndex];
-    element.position = up ? this.selectedElementIndex - 1 : this.selectedElementIndex + 1;
-    this.todoElements.splice(this.selectedElementIndex, 1);
-    this.todoElements.splice(element.position, 0, element);
-    this.selectedElementIndex = element.position;
+    const elementToMove = this.todoElements.splice(this.selectedElementIndex, 1);
+    elementToMove[0].position = up ? this.selectedElementIndex - 1 : this.selectedElementIndex + 1;
+    this.todoElements.splice(elementToMove[0].position, 0, elementToMove[0]);
+    this.selectedElementIndex = elementToMove[0].position;
 
     // update in server
-    this.todoElementsProxy.updateListElement(element.id, element).subscribe();
+    this.todoElementsProxy.updateListElement(elementToMove[0].id, elementToMove[0]).subscribe();
   }
 
   moveDown(): void {

@@ -67,9 +67,7 @@ export class TodoItemsComponent implements OnInit {
 
     const dialogRef = this.dialog.open(TodoItemDialogComponent, dialogConfig);
 
-    dialogRef.afterClosed().subscribe(
-      data => { if (data != null) this.addItemInternal(data); }
-    );
+    dialogRef.afterClosed().subscribe(data => { if (data != null) this.addItemInternal(data); });
   }
 
   private addItemInternal(data: TodoItemDialogData): void {
@@ -92,22 +90,24 @@ export class TodoItemsComponent implements OnInit {
   public itemChecked(event): void {
     const item = this.todoItems[this.selectedItemIndex];
     item.done = event.checked;
+    // make sure position is up to date, otherwise server may move item
+    item.position = this.selectedItemIndex;
+
+    // update in server
     this.todoItemsProxy.updateItem(item.id, item).subscribe();
   }
 
   public removeItem(): void {
-    this.todoItemsProxy.deleteItem(
-      this.todoItems[this.selectedItemIndex].id).subscribe(() => this.processDeletion());
-  }
-
-  private processDeletion(): void {
-    this.todoItems.splice(this.selectedItemIndex, 1);
+    const removedItems = this.todoItems.splice(this.selectedItemIndex, 1);
     this.table.renderRows();
     if (this.selectedItemIndex == this.todoItems.length) {
       this.selectedItemIndex -= 1;
     }
     const args = new ItemCountChangedEventArgs(this.todoListId, this.todoItems.length);
     this.todoListService.fireItemCountChanged(args);
+
+    // update in server
+    this.todoItemsProxy.deleteItem(removedItems[0].id).subscribe();
   }
 
   public editItem(index: number): void {
@@ -120,8 +120,7 @@ export class TodoItemsComponent implements OnInit {
 
     const dialogRef = this.dialog.open(TodoItemDialogComponent, dialogConfig);
 
-    dialogRef.afterClosed().subscribe(
-      data => { if (data != null) this.editItemInternal(data); }
+    dialogRef.afterClosed().subscribe(data => { if (data != null) this.editItemInternal(data); }
     );
   }
 
@@ -129,26 +128,30 @@ export class TodoItemsComponent implements OnInit {
     const item = this.todoItems[this.selectedItemIndex];
     item.task = data.task;
     item.dueDate = data.dueDate;
+    // make sure position is up to date, otherwise server may move item
+    item.position = this.selectedItemIndex;
+
+    // update in server
     this.todoItemsProxy.updateItem(item.id, item).subscribe();
   }
 
   moveUp(): void {
-    const item = this.todoItems[this.selectedItemIndex];
-    item.position = this.selectedItemIndex - 1;
-    this.todoItemsProxy.updateItem(item.id, item).subscribe(() => this.processMove(true));
+    this.move(true);
   }
 
-  private processMove(up: boolean): void {
-    const deletedItems = this.todoItems.splice(this.selectedItemIndex, 1);
-    this.selectedItemIndex = up ? this.selectedItemIndex - 1 : this.selectedItemIndex + 1;
-    this.todoItems.splice(this.selectedItemIndex, 0, deletedItems[0]);
+  private move(up: boolean) {
+    const itemsToMove = this.todoItems.splice(this.selectedItemIndex, 1);
+    itemsToMove[0].position = up ? this.selectedItemIndex - 1 : this.selectedItemIndex + 1;
+    this.todoItems.splice(itemsToMove[0].position, 0, itemsToMove[0]);
+    this.selectedItemIndex = itemsToMove[0].position;
     this.table.renderRows();
+
+    // update in server
+    this.todoItemsProxy.updateItem(itemsToMove[0].id, itemsToMove[0]).subscribe();
   }
 
   moveDown(): void {
-    const item = this.todoItems[this.selectedItemIndex];
-    item.position = this.selectedItemIndex + 1;
-    this.todoItemsProxy.updateItem(item.id, item).subscribe(() => this.processMove(false));
+    this.move(false);
   }
 
   getDueString(date: Date): string {
