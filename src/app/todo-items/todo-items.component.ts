@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoItemDialogComponent, TodoItemDialogData } from '../todo-item-dialog/todo-item-dialog.component';
-import { TodoListService } from "../services/todo-list.service"
+import { TodoListService, ItemCountChangedEventArgs, NameChangedEventArgs } from "../services/todo-list.service"
 import { DueDateOption, DueDateService } from '../services/due-date.service'
 
 @Component({
@@ -39,6 +39,14 @@ export class TodoItemsComponent implements OnInit {
         this.todoListsProxy.getList(+params.get('id')))
     );
     this.todoList$.subscribe(list => this.processList(list));
+
+    this.todoListService.nameChanged$.subscribe(args => this.processNameChange(args));
+  }
+
+  private processNameChange(args: NameChangedEventArgs) {
+    if (args.id == this.todoListId) {
+      this.title = args.name;
+    }
   }
 
   private processList(list: TodoList) {
@@ -77,7 +85,8 @@ export class TodoItemsComponent implements OnInit {
     this.todoItems.push(item);
     this.table.renderRows();
     this.selectedItemIndex = this.todoItems.length - 1;
-    this.todoListService.fireListChanged(this.todoListId);
+    const args = new ItemCountChangedEventArgs(this.todoListId, this.todoItems.length);
+    this.todoListService.fireItemCountChanged(args);
   }
 
   public itemChecked(event): void {
@@ -97,7 +106,8 @@ export class TodoItemsComponent implements OnInit {
     if (this.selectedItemIndex == this.todoItems.length) {
       this.selectedItemIndex -= 1;
     }
-    this.todoListService.fireListChanged(this.todoListId);
+    const args = new ItemCountChangedEventArgs(this.todoListId, this.todoItems.length);
+    this.todoListService.fireItemCountChanged(args);
   }
 
   public editItem(index: number): void {

@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { TodoElement, TodoElementsProxy, TodoList, TodoListsProxy } from '../proxies/todo-api-proxies';
 import { MatDialog, MatDialogConfig } from "@angular/material";
-import { TodoListDialogComponent } from '../todo-list-dialog/todo-list-dialog.component';
+import { TodoListDialogComponent, TodoListDialogData } from '../todo-list-dialog/todo-list-dialog.component';
 import { ActivatedRoute, Router } from "@angular/router";
-import { TodoListService } from "../services/todo-list.service"
+import { TodoListService, ItemCountChangedEventArgs, NameChangedEventArgs } from "../services/todo-list.service"
 
 @Component({
   selector: 'app-todo-lists',
@@ -24,30 +24,26 @@ export class TodoListsComponent implements OnInit {
   ngOnInit() {
     this.getLists();
 
-    this.todoListService.listChanged$.subscribe(id => this.processListChange(id));
+    this.todoListService.itemCountChanged$.subscribe(args => this.processItemCountChange(args));
   }
 
-  processListChange(id: number) {
-    // let's assume the currently selected list changed
-    if (this.todoElements[this.selectedElementIndex].id == id) {
-      this.todoElementsProxy.getListElement(id).subscribe(element => this.processElement(element));
+  private processItemCountChange(args: ItemCountChangedEventArgs) {
+    const index = this.todoElements.findIndex(entry => entry.id == args.id);
+    if (index >= 0) {
+      const element = this.todoElements[index];
+      element.childCount = args.itemCount;
     }
   }
 
-  processElement(element: TodoElement) {
-    this.todoElements.splice(this.selectedElementIndex, 1, element);
-  }
-
   getLists(): void {
-    this.todoElementsProxy.getAllListElements()
-      .subscribe(elements => this.processElements(elements));
+    this.todoElementsProxy.getAllListElements().subscribe(elements => this.processElements(elements));
   }
 
   private processElements(elements: TodoElement[]) {
     this.todoElements = elements;
     if (elements.length > 0) {
+      // select first element in list, and route to it
       this.selectedElementIndex = 0;
-      // navigate to first todo list
       this.router.navigate([`items/${elements[0].id}`]);
     }
   }
@@ -56,18 +52,16 @@ export class TodoListsComponent implements OnInit {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
-    dialogConfig.data = {};
 
     const dialogRef = this.dialog.open(TodoListDialogComponent, dialogConfig);
 
-    dialogRef.afterClosed().subscribe(
-      val => { if (val != null) this.addlist(val.name); }
+    dialogRef.afterClosed().subscribe(data => { if (data != null) this.addlist(data); }
     );
   }
 
-  private addlist(name: string): void {
+  private addlist(data: TodoListDialogData): void {
     const list = new TodoList();
-    list.name = name;
+    list.name = data.name;
     list.position = this.todoElements.length;
     this.todoListsProxy.createList(list).subscribe(list => this.processCreation(list));
   }
@@ -75,6 +69,8 @@ export class TodoListsComponent implements OnInit {
   private processCreation(list: TodoList): void {
     const element = new TodoElement({ id: list.id, name: list.name, position: list.position, childCount: list.items.length });
     this.todoElements.push(element);
+
+    // select the newly created item, and route to it
     this.selectedElementIndex = this.todoElements.length - 1;
     this.router.navigate([`items/${list.id}`]);
   }
@@ -84,12 +80,7 @@ export class TodoListsComponent implements OnInit {
   }
 
   public removeList(): void {
-    const id = this.todoElements[this.selectedElementIndex].id;
-    this.todoListsProxy.deleteList(id).subscribe(() => this.processDeletion());
-  }
-
-  private processDeletion(): void {
-    this.todoElements.splice(this.selectedElementIndex, 1);
+    const elements = this.todoElements.splice(this.selectedElementIndex, 1);
     if (this.todoElements.length == 0) {
       // list is empty, let's go home
       this.selectedElementIndex = -1;
@@ -97,11 +88,13 @@ export class TodoListsComponent implements OnInit {
     }
     else {
       if (this.selectedElementIndex == this.todoElements.length) {
-        // route to the last one in the list
         this.selectedElementIndex -= 1;
       }
       this.router.navigate([`items/${this.todoElements[this.selectedElementIndex].id}`]);
     }
+
+    // remove from server
+    this.todoListsProxy.deleteList(elements[0].id).subscribe();
   }
 
   editList(index: number): void {
@@ -112,32 +105,42 @@ export class TodoListsComponent implements OnInit {
 
     const dialogRef = this.dialog.open(TodoListDialogComponent, dialogConfig);
 
-    dialogRef.afterClosed().subscribe(
-      val => { if (val != null) this.editlist(val.name); }
+    dialogRef.afterClosed().subscribe(data => { if (data != null) this.editlist(data); }
     );
   }
 
-  private editlist(name: string): void {
-    const info = this.todoElements[this.selectedElementIndex];
-    info.name = name;
-    this.todoElementsProxy.updateListElement(info.id, info).subscribe();
+  private editlist(data: TodoListDialogData): void {
+    const element = this.todoElements[this.selectedElementIndex];
+    const currentName = element.name;
+    element.name = data.name;
+    // position may have become stale (move or delete), use current
+    element.position = this.selectedElementIndex;
+
+    if (name != currentName) {
+      const args = new NameChangedEventArgs(element.id, data.name);
+      this.todoListService.fireNameChanged(args);
+    }
+
+    // update in server
+    this.todoElementsProxy.updateListElement(element.id, element).subscribe();
   }
 
   moveUp(): void {
-    const info = this.todoElements[this.selectedElementIndex];
-    info.position = this.selectedElementIndex - 1;
-    this.todoElementsProxy.updateListElement(info.id, info).subscribe(() => this.processMove(true));
+    this.move(true);
   }
 
-  private processMove(up: boolean): void {
-    const deletedInfos = this.todoElements.splice(this.selectedElementIndex, 1);
-    this.selectedElementIndex = up ? this.selectedElementIndex - 1 : this.selectedElementIndex + 1;
-    this.todoElements.splice(this.selectedElementIndex, 0, deletedInfos[0]);
+  private move(up: boolean) {
+    const element = this.todoElements[this.selectedElementIndex];
+    element.position = up ? this.selectedElementIndex - 1 : this.selectedElementIndex + 1;
+    this.todoElements.splice(this.selectedElementIndex, 1);
+    this.todoElements.splice(element.position, 0, element);
+    this.selectedElementIndex = element.position;
+
+    // update in server
+    this.todoElementsProxy.updateListElement(element.id, element).subscribe();
   }
 
   moveDown(): void {
-    const info = this.todoElements[this.selectedElementIndex];
-    info.position = this.selectedElementIndex + 1;
-    this.todoElementsProxy.updateListElement(info.id, info).subscribe(() => this.processMove(false));
+    this.move(false);
   }
 }

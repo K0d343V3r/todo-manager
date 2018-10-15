@@ -1,16 +1,31 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 
+export class ItemCountChangedEventArgs {
+  constructor(public id: number, public itemCount: number) {}
+}
+
+export class NameChangedEventArgs {
+  constructor(public id: number, public name: string) {}
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class TodoListService {
-  private listChangedSource = new Subject<number>();
-  listChanged$ = this.listChangedSource.asObservable();
+  private itemCountChangedSource = new Subject<ItemCountChangedEventArgs>();
+  itemCountChanged$ = this.itemCountChangedSource.asObservable();
+
+  private nameChangedSource = new Subject<NameChangedEventArgs>();
+  nameChanged$ = this.nameChangedSource.asObservable();
 
   constructor() { }
 
-  fireListChanged(id: number): void {
-    this.listChangedSource.next(id);
+  fireItemCountChanged(args: ItemCountChangedEventArgs): void {
+    this.itemCountChangedSource.next(args);
+  }
+
+  fireNameChanged(args: NameChangedEventArgs): void {
+    this.nameChangedSource.next(args);
   }
 }

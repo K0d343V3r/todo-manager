@@ -2,6 +2,11 @@ import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material";
 import { FormGroup, FormBuilder } from '@angular/forms'
 
+export class TodoListDialogData {
+  constructor(public name: string) {
+  }
+}
+
 @Component({
   selector: 'app-todo-list-dialog',
   templateUrl: './todo-list-dialog.component.html',
@@ -14,9 +19,15 @@ export class TodoListDialogComponent implements OnInit {
 
   constructor(private fb: FormBuilder,
     private dialogRef: MatDialogRef<TodoListDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) data) {
-    this.name = data.name;
-    this.title = data.name != null ? "Edit Todo List" : "New Todo List";
+    @Inject(MAT_DIALOG_DATA) data: TodoListDialogData) {
+    if (data == null) {
+      this.title = "New Todo List"
+      this.name = "";
+    } else {
+      this.title = "Edit Todo List"
+      this.name = data.name;
+    }
+
     this.form = fb.group({
       name: [this.name, []]
     });
@@ -26,7 +37,8 @@ export class TodoListDialogComponent implements OnInit {
   }
 
   save() {
-    this.dialogRef.close(this.form.value);
+    const data = new TodoListDialogData(this.form.value.name.trim());
+    this.dialogRef.close(data);
   }
 
   cancel() {

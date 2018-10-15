@@ -15,8 +15,11 @@ export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
 
 export interface ITodoElementsProxy {
     getAllListElements(): Observable<TodoElement[] | null>;
+    getAllQueryElements(): Observable<TodoElement[] | null>;
     getListElement(id: number): Observable<TodoElement | null>;
     updateListElement(id: number, element: TodoElement | null): Observable<TodoElement | null>;
+    getQueryElement(id: number): Observable<TodoElement | null>;
+    updateQueryElement(id: number, element: TodoElement | null): Observable<TodoElement | null>;
 }
 
 @Injectable()
@@ -57,6 +60,58 @@ export class TodoElementsProxy implements ITodoElementsProxy {
     }
 
     protected processGetAllListElements(response: HttpResponseBase): Observable<TodoElement[] | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (resultData200 && resultData200.constructor === Array) {
+                result200 = [];
+                for (let item of resultData200)
+                    result200.push(TodoElement.fromJS(item));
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<TodoElement[] | null>(<any>null);
+    }
+
+    getAllQueryElements(): Observable<TodoElement[] | null> {
+        let url_ = this.baseUrl + "/api/TodoElements/queries";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetAllQueryElements(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetAllQueryElements(<any>response_);
+                } catch (e) {
+                    return <Observable<TodoElement[] | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<TodoElement[] | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processGetAllQueryElements(response: HttpResponseBase): Observable<TodoElement[] | null> {
         const status = response.status;
         const responseBlob = 
             response instanceof HttpResponse ? response.body : 
@@ -125,6 +180,10 @@ export class TodoElementsProxy implements ITodoElementsProxy {
             result200 = resultData200 ? TodoElement.fromJS(resultData200) : <any>null;
             return _observableOf(result200);
             }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -180,7 +239,121 @@ export class TodoElementsProxy implements ITodoElementsProxy {
             result200 = resultData200 ? TodoElement.fromJS(resultData200) : <any>null;
             return _observableOf(result200);
             }));
-        } else if (status === 400) {
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<TodoElement | null>(<any>null);
+    }
+
+    getQueryElement(id: number): Observable<TodoElement | null> {
+        let url_ = this.baseUrl + "/api/TodoElements/queries/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id)); 
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetQueryElement(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetQueryElement(<any>response_);
+                } catch (e) {
+                    return <Observable<TodoElement | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<TodoElement | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processGetQueryElement(response: HttpResponseBase): Observable<TodoElement | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 ? TodoElement.fromJS(resultData200) : <any>null;
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<TodoElement | null>(<any>null);
+    }
+
+    updateQueryElement(id: number, element: TodoElement | null): Observable<TodoElement | null> {
+        let url_ = this.baseUrl + "/api/TodoElements/queries/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id)); 
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(element);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json", 
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processUpdateQueryElement(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdateQueryElement(<any>response_);
+                } catch (e) {
+                    return <Observable<TodoElement | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<TodoElement | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processUpdateQueryElement(response: HttpResponseBase): Observable<TodoElement | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 ? TodoElement.fromJS(resultData200) : <any>null;
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("A server error occurred.", status, _responseText, _headers);
             }));
@@ -196,10 +369,10 @@ export class TodoElementsProxy implements ITodoElementsProxy {
 export interface ITodoItemsProxy {
     getAllItems(): Observable<TodoListItem[] | null>;
     createItem(item: TodoListItem | null): Observable<TodoListItem | null>;
-    deleteItems(id: number[] | null | undefined): Observable<FileResponse | null>;
+    deleteItems(id: number[] | null | undefined): Observable<number[] | null>;
     getItem(id: number): Observable<TodoListItem | null>;
     updateItem(id: number, item: TodoListItem | null): Observable<TodoListItem | null>;
-    deleteItem(id: number): Observable<FileResponse | null>;
+    deleteItem(id: number): Observable<number>;
 }
 
 @Injectable()
@@ -309,10 +482,6 @@ export class TodoItemsProxy implements ITodoItemsProxy {
             result201 = resultData201 ? TodoListItem.fromJS(resultData201) : <any>null;
             return _observableOf(result201);
             }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
-            return throwException("A server error occurred.", status, _responseText, _headers);
-            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -321,7 +490,7 @@ export class TodoItemsProxy implements ITodoItemsProxy {
         return _observableOf<TodoListItem | null>(<any>null);
     }
 
-    deleteItems(id: number[] | null | undefined): Observable<FileResponse | null> {
+    deleteItems(id: number[] | null | undefined): Observable<number[] | null> {
         let url_ = this.baseUrl + "/api/TodoItems?";
         if (id !== undefined)
             id && id.forEach(item => { url_ += "id=" + encodeURIComponent("" + item) + "&"; });
@@ -342,31 +511,41 @@ export class TodoItemsProxy implements ITodoItemsProxy {
                 try {
                     return this.processDeleteItems(<any>response_);
                 } catch (e) {
-                    return <Observable<FileResponse | null>><any>_observableThrow(e);
+                    return <Observable<number[] | null>><any>_observableThrow(e);
                 }
             } else
-                return <Observable<FileResponse | null>><any>_observableThrow(response_);
+                return <Observable<number[] | null>><any>_observableThrow(response_);
         }));
     }
 
-    protected processDeleteItems(response: HttpResponseBase): Observable<FileResponse | null> {
+    protected processDeleteItems(response: HttpResponseBase): Observable<number[] | null> {
         const status = response.status;
         const responseBlob = 
             response instanceof HttpResponse ? response.body : 
             (<any>response).error instanceof Blob ? (<any>response).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            const fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-            const fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            return _observableOf({ fileName: fileName, data: <any>responseBlob, status: status, headers: _headers });
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (resultData200 && resultData200.constructor === Array) {
+                result200 = [];
+                for (let item of resultData200)
+                    result200.push(item);
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             }));
         }
-        return _observableOf<FileResponse | null>(<any>null);
+        return _observableOf<number[] | null>(<any>null);
     }
 
     getItem(id: number): Observable<TodoListItem | null> {
@@ -411,6 +590,10 @@ export class TodoItemsProxy implements ITodoItemsProxy {
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
             result200 = resultData200 ? TodoListItem.fromJS(resultData200) : <any>null;
             return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
@@ -467,7 +650,7 @@ export class TodoItemsProxy implements ITodoItemsProxy {
             result200 = resultData200 ? TodoListItem.fromJS(resultData200) : <any>null;
             return _observableOf(result200);
             }));
-        } else if (status === 400) {
+        } else if (status === 404) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("A server error occurred.", status, _responseText, _headers);
             }));
@@ -479,7 +662,7 @@ export class TodoItemsProxy implements ITodoItemsProxy {
         return _observableOf<TodoListItem | null>(<any>null);
     }
 
-    deleteItem(id: number): Observable<FileResponse | null> {
+    deleteItem(id: number): Observable<number> {
         let url_ = this.baseUrl + "/api/TodoItems/{id}";
         if (id === undefined || id === null)
             throw new Error("The parameter 'id' must be defined.");
@@ -501,41 +684,47 @@ export class TodoItemsProxy implements ITodoItemsProxy {
                 try {
                     return this.processDeleteItem(<any>response_);
                 } catch (e) {
-                    return <Observable<FileResponse | null>><any>_observableThrow(e);
+                    return <Observable<number>><any>_observableThrow(e);
                 }
             } else
-                return <Observable<FileResponse | null>><any>_observableThrow(response_);
+                return <Observable<number>><any>_observableThrow(response_);
         }));
     }
 
-    protected processDeleteItem(response: HttpResponseBase): Observable<FileResponse | null> {
+    protected processDeleteItem(response: HttpResponseBase): Observable<number> {
         const status = response.status;
         const responseBlob = 
             response instanceof HttpResponse ? response.body : 
             (<any>response).error instanceof Blob ? (<any>response).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            const fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-            const fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            return _observableOf({ fileName: fileName, data: <any>responseBlob, status: status, headers: _headers });
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 !== undefined ? resultData200 : <any>null;
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             }));
         }
-        return _observableOf<FileResponse | null>(<any>null);
+        return _observableOf<number>(<any>null);
     }
 }
 
 export interface ITodoListsProxy {
     getAllLists(): Observable<TodoList[] | null>;
     createList(list: TodoList | null): Observable<TodoList | null>;
-    deleteLists(id: number[] | null | undefined): Observable<FileResponse | null>;
+    deleteLists(id: number[] | null | undefined): Observable<number[] | null>;
     getList(id: number): Observable<TodoList | null>;
     updateList(id: number, list: TodoList | null): Observable<TodoList | null>;
-    deleteList(id: number): Observable<FileResponse | null>;
+    deleteList(id: number): Observable<number>;
 }
 
 @Injectable()
@@ -645,10 +834,6 @@ export class TodoListsProxy implements ITodoListsProxy {
             result201 = resultData201 ? TodoList.fromJS(resultData201) : <any>null;
             return _observableOf(result201);
             }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
-            return throwException("A server error occurred.", status, _responseText, _headers);
-            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -657,7 +842,7 @@ export class TodoListsProxy implements ITodoListsProxy {
         return _observableOf<TodoList | null>(<any>null);
     }
 
-    deleteLists(id: number[] | null | undefined): Observable<FileResponse | null> {
+    deleteLists(id: number[] | null | undefined): Observable<number[] | null> {
         let url_ = this.baseUrl + "/api/TodoLists?";
         if (id !== undefined)
             id && id.forEach(item => { url_ += "id=" + encodeURIComponent("" + item) + "&"; });
@@ -678,31 +863,41 @@ export class TodoListsProxy implements ITodoListsProxy {
                 try {
                     return this.processDeleteLists(<any>response_);
                 } catch (e) {
-                    return <Observable<FileResponse | null>><any>_observableThrow(e);
+                    return <Observable<number[] | null>><any>_observableThrow(e);
                 }
             } else
-                return <Observable<FileResponse | null>><any>_observableThrow(response_);
+                return <Observable<number[] | null>><any>_observableThrow(response_);
         }));
     }
 
-    protected processDeleteLists(response: HttpResponseBase): Observable<FileResponse | null> {
+    protected processDeleteLists(response: HttpResponseBase): Observable<number[] | null> {
         const status = response.status;
         const responseBlob = 
             response instanceof HttpResponse ? response.body : 
             (<any>response).error instanceof Blob ? (<any>response).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            const fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-            const fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            return _observableOf({ fileName: fileName, data: <any>responseBlob, status: status, headers: _headers });
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (resultData200 && resultData200.constructor === Array) {
+                result200 = [];
+                for (let item of resultData200)
+                    result200.push(item);
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             }));
         }
-        return _observableOf<FileResponse | null>(<any>null);
+        return _observableOf<number[] | null>(<any>null);
     }
 
     getList(id: number): Observable<TodoList | null> {
@@ -747,6 +942,10 @@ export class TodoListsProxy implements ITodoListsProxy {
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
             result200 = resultData200 ? TodoList.fromJS(resultData200) : <any>null;
             return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
@@ -803,7 +1002,7 @@ export class TodoListsProxy implements ITodoListsProxy {
             result200 = resultData200 ? TodoList.fromJS(resultData200) : <any>null;
             return _observableOf(result200);
             }));
-        } else if (status === 400) {
+        } else if (status === 404) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("A server error occurred.", status, _responseText, _headers);
             }));
@@ -815,7 +1014,7 @@ export class TodoListsProxy implements ITodoListsProxy {
         return _observableOf<TodoList | null>(<any>null);
     }
 
-    deleteList(id: number): Observable<FileResponse | null> {
+    deleteList(id: number): Observable<number> {
         let url_ = this.baseUrl + "/api/TodoLists/{id}";
         if (id === undefined || id === null)
             throw new Error("The parameter 'id' must be defined.");
@@ -837,31 +1036,389 @@ export class TodoListsProxy implements ITodoListsProxy {
                 try {
                     return this.processDeleteList(<any>response_);
                 } catch (e) {
-                    return <Observable<FileResponse | null>><any>_observableThrow(e);
+                    return <Observable<number>><any>_observableThrow(e);
                 }
             } else
-                return <Observable<FileResponse | null>><any>_observableThrow(response_);
+                return <Observable<number>><any>_observableThrow(response_);
         }));
     }
 
-    protected processDeleteList(response: HttpResponseBase): Observable<FileResponse | null> {
+    protected processDeleteList(response: HttpResponseBase): Observable<number> {
         const status = response.status;
         const responseBlob = 
             response instanceof HttpResponse ? response.body : 
             (<any>response).error instanceof Blob ? (<any>response).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            const fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-            const fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            return _observableOf({ fileName: fileName, data: <any>responseBlob, status: status, headers: _headers });
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 !== undefined ? resultData200 : <any>null;
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             }));
         }
-        return _observableOf<FileResponse | null>(<any>null);
+        return _observableOf<number>(<any>null);
+    }
+}
+
+export interface ITodoQueriesProxy {
+    getAllQueries(): Observable<TodoQuery[] | null>;
+    createQuery(query: TodoQuery | null): Observable<TodoQuery | null>;
+    deleteQueries(id: number[] | null | undefined): Observable<number[] | null>;
+    getQuery(id: number): Observable<TodoQuery | null>;
+    updateQuery(id: number, query: TodoQuery | null): Observable<TodoQuery | null>;
+    deleteQuery(id: number): Observable<number>;
+}
+
+@Injectable()
+export class TodoQueriesProxy implements ITodoQueriesProxy {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ? baseUrl : "https://localhost:44310";
+    }
+
+    getAllQueries(): Observable<TodoQuery[] | null> {
+        let url_ = this.baseUrl + "/api/TodoQueries";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetAllQueries(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetAllQueries(<any>response_);
+                } catch (e) {
+                    return <Observable<TodoQuery[] | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<TodoQuery[] | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processGetAllQueries(response: HttpResponseBase): Observable<TodoQuery[] | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (resultData200 && resultData200.constructor === Array) {
+                result200 = [];
+                for (let item of resultData200)
+                    result200.push(TodoQuery.fromJS(item));
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<TodoQuery[] | null>(<any>null);
+    }
+
+    createQuery(query: TodoQuery | null): Observable<TodoQuery | null> {
+        let url_ = this.baseUrl + "/api/TodoQueries";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(query);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json", 
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processCreateQuery(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processCreateQuery(<any>response_);
+                } catch (e) {
+                    return <Observable<TodoQuery | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<TodoQuery | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processCreateQuery(response: HttpResponseBase): Observable<TodoQuery | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 201) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result201: any = null;
+            let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result201 = resultData201 ? TodoQuery.fromJS(resultData201) : <any>null;
+            return _observableOf(result201);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<TodoQuery | null>(<any>null);
+    }
+
+    deleteQueries(id: number[] | null | undefined): Observable<number[] | null> {
+        let url_ = this.baseUrl + "/api/TodoQueries?";
+        if (id !== undefined)
+            id && id.forEach(item => { url_ += "id=" + encodeURIComponent("" + item) + "&"; });
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("delete", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processDeleteQueries(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processDeleteQueries(<any>response_);
+                } catch (e) {
+                    return <Observable<number[] | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<number[] | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processDeleteQueries(response: HttpResponseBase): Observable<number[] | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (resultData200 && resultData200.constructor === Array) {
+                result200 = [];
+                for (let item of resultData200)
+                    result200.push(item);
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<number[] | null>(<any>null);
+    }
+
+    getQuery(id: number): Observable<TodoQuery | null> {
+        let url_ = this.baseUrl + "/api/TodoQueries/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id)); 
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetQuery(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetQuery(<any>response_);
+                } catch (e) {
+                    return <Observable<TodoQuery | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<TodoQuery | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processGetQuery(response: HttpResponseBase): Observable<TodoQuery | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 ? TodoQuery.fromJS(resultData200) : <any>null;
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<TodoQuery | null>(<any>null);
+    }
+
+    updateQuery(id: number, query: TodoQuery | null): Observable<TodoQuery | null> {
+        let url_ = this.baseUrl + "/api/TodoQueries/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id)); 
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(query);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json", 
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processUpdateQuery(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdateQuery(<any>response_);
+                } catch (e) {
+                    return <Observable<TodoQuery | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<TodoQuery | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processUpdateQuery(response: HttpResponseBase): Observable<TodoQuery | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 ? TodoQuery.fromJS(resultData200) : <any>null;
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<TodoQuery | null>(<any>null);
+    }
+
+    deleteQuery(id: number): Observable<number> {
+        let url_ = this.baseUrl + "/api/TodoQueries/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id)); 
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("delete", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processDeleteQuery(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processDeleteQuery(<any>response_);
+                } catch (e) {
+                    return <Observable<number>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<number>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processDeleteQuery(response: HttpResponseBase): Observable<number> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 !== undefined ? resultData200 : <any>null;
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<number>(<any>null);
     }
 }
 
@@ -1057,11 +1614,59 @@ export interface ITodoList extends ITodoElementBase {
     items?: TodoListItem[] | undefined;
 }
 
-export interface FileResponse {
-    data: Blob;
-    status: number;
-    fileName?: string;
-    headers?: { [name: string]: any };
+export class TodoQuery extends TodoElementBase implements ITodoQuery {
+    operand!: QueryOperand;
+    operator!: QueryOperator;
+    boolValue!: boolean;
+    dateValue!: Date;
+
+    constructor(data?: ITodoQuery) {
+        super(data);
+    }
+
+    init(data?: any) {
+        super.init(data);
+        if (data) {
+            this.operand = data["operand"];
+            this.operator = data["operator"];
+            this.boolValue = data["boolValue"];
+            this.dateValue = data["dateValue"] ? new Date(data["dateValue"].toString()) : <any>undefined;
+        }
+    }
+
+    static fromJS(data: any): TodoQuery {
+        data = typeof data === 'object' ? data : {};
+        let result = new TodoQuery();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["operand"] = this.operand;
+        data["operator"] = this.operator;
+        data["boolValue"] = this.boolValue;
+        data["dateValue"] = this.dateValue ? this.dateValue.toISOString() : <any>undefined;
+        super.toJSON(data);
+        return data; 
+    }
+}
+
+export interface ITodoQuery extends ITodoElementBase {
+    operand: QueryOperand;
+    operator: QueryOperator;
+    boolValue: boolean;
+    dateValue: Date;
+}
+
+export enum QueryOperand {
+    DueDate = 0, 
+    Important = 1, 
+}
+
+export enum QueryOperator {
+    Equals = 0, 
+    NotEquals = 1, 
 }
 
 export class SwaggerException extends Error {
