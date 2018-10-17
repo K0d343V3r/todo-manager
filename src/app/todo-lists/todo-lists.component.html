@@ -15,10 +15,10 @@
   <button mat-icon-button [disabled]="todoElements.length == 0" (click)="removeList()">
     <mat-icon>remove</mat-icon>
   </button>
-  <button mat-icon-button [disabled]="selectedElementIndex <= 0" (click)="moveUp()">
+  <button mat-icon-button [disabled]="selectedElementIndex <= 0" (click)="move(true)">
     <mat-icon>arrow_upward</mat-icon>
   </button>
-  <button mat-icon-button [disabled]="selectedElementIndex == todoElements.length - 1" (click)="moveDown()">
+  <button mat-icon-button [disabled]="selectedElementIndex == todoElements.length - 1" (click)="move(false)">
     <mat-icon>arrow_downward</mat-icon>
   </button>
 </mat-toolbar>

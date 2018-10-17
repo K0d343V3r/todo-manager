@@ -1,0 +1,29 @@
+<table mat-table [dataSource]=viewItems>
+  <ng-container matColumnDef="done">
+    <th mat-header-cell *matHeaderCellDef></th>
+    <td mat-cell *matCellDef="let item">
+      <mat-checkbox [checked]="item.done" (change)="viewItemChecked($event)">
+      </mat-checkbox>
+    </td>
+  </ng-container>
+  <ng-container matColumnDef="task">
+    <th mat-header-cell *matHeaderCellDef> Task </th>
+    <td mat-cell *matCellDef="let item">{{item.task}}</td>
+  </ng-container>
+  <ng-container matColumnDef="dueDate">
+    <th mat-header-cell *matHeaderCellDef> Due </th>
+    <td mat-cell *matCellDef="let item">{{viewGetDueString(item.dueDate)}}</td>
+  </ng-container>
+  <ng-container matColumnDef="edit">
+    <th mat-header-cell *matHeaderCellDef></th>
+    <td mat-cell *matCellDef="let i = index">
+      <button mat-icon-button (click)="viewEditItem(i)">
+        <mat-icon>edit</mat-icon>
+      </button>
+    </td>
+  </ng-container>
+  <tr mat-header-row *matHeaderRowDef="viewColumns"></tr>
+  <tr mat-row *matRowDef="let i = index; columns: viewColumns" [ngClass]="{'highlight': selectedItemIndex == i}"
+    (click)="viewRowSelected(i)">
+  </tr>
+</table>

@@ -11,6 +11,7 @@ import { TodoListDialogComponent } from './todo-list-dialog/todo-list-dialog.com
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { TodoItemsComponent } from './todo-items/todo-items.component';
 import { TodoItemDialogComponent } from './todo-item-dialog/todo-item-dialog.component';
+import { TodoItemTableComponent } from './todo-item-table/todo-item-table.component';
 
 @NgModule({
   declarations: [
@@ -18,7 +19,8 @@ import { TodoItemDialogComponent } from './todo-item-dialog/todo-item-dialog.com
     TodoListsComponent,
     TodoListDialogComponent,
     TodoItemsComponent,
-    TodoItemDialogComponent
+    TodoItemDialogComponent,
+    TodoItemTableComponent
   ],
   imports: [
     BrowserModule,

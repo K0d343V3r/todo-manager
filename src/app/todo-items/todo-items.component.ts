@@ -1,13 +1,13 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { TodoList, TodoListItem, TodoListsProxy, TodoItemsProxy } from '../proxies/todo-api-proxies';
 import { ActivatedRoute, ParamMap } from '@angular/router';
-import { MatTable } from '@angular/material';
 import { Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoItemDialogComponent, TodoItemDialogData } from '../todo-item-dialog/todo-item-dialog.component';
-import { TodoListService, ItemCountChangedEventArgs, NameChangedEventArgs } from "../services/todo-list.service"
-import { DueDateOption, DueDateService } from '../services/due-date.service'
+import { TodoListService, ItemCountChangedEventArgs, NameChangedEventArgs } from "../services/todo-list.service";
+import { DueDateService } from '../services/due-date.service';
+import { TodoItemTableComponent } from '../todo-item-table/todo-item-table.component';
 
 @Component({
   selector: 'app-todo-items',
@@ -16,16 +16,11 @@ import { DueDateOption, DueDateService } from '../services/due-date.service'
 })
 export class TodoItemsComponent implements OnInit {
   private todoListId: number;
-  todoList$: Observable<TodoList>;
-  todoItems: TodoListItem[] = [];
+  private todoList$: Observable<TodoList>;
+  @ViewChild(TodoItemTableComponent) private itemTable: TodoItemTableComponent;
   title: string;
-  columnsToDisplay: string[] = ['done', 'task', 'dueDate', 'edit'];
-  selectedItemIndex: number = -1;
-
-  @ViewChild(MatTable) table: MatTable<any>;
 
   constructor(
-    private dueDateService: DueDateService,
     private todoListService: TodoListService,
     private route: ActivatedRoute,
     private todoListsProxy: TodoListsProxy,
@@ -35,36 +30,30 @@ export class TodoItemsComponent implements OnInit {
 
   ngOnInit() {
     this.todoList$ = this.route.paramMap.pipe(
-      switchMap((params: ParamMap) =>
-        this.todoListsProxy.getList(+params.get('id')))
+      switchMap((params: ParamMap) => this.todoListsProxy.getList(+params.get('id')))
     );
-    this.todoList$.subscribe(list => this.processList(list));
 
-    this.todoListService.nameChanged$.subscribe(args => this.processNameChange(args));
+    this.todoList$.subscribe(list => this.onTodoListChanged(list));
+    this.itemTable.selectedItemEdited.subscribe(item => this.onSelectedItemEdited(item));
+    this.todoListService.listNameChanged$.subscribe(args => this.onListNameChanged(args));
   }
 
-  private processNameChange(args: NameChangedEventArgs) {
+  private onListNameChanged(args: NameChangedEventArgs) {
     if (args.id == this.todoListId) {
       this.title = args.name;
     }
   }
 
-  private processList(list: TodoList) {
-    this.todoItems = list.items;
+  private onTodoListChanged(list: TodoList) {
+    this.itemTable.addItems(list.items);
     this.title = list.name;
     this.todoListId = list.id;
-    this.selectedItemIndex = list.items.length == 0 ? -1 : 0;
-  }
-
-  public onSelected(index: number) {
-    this.selectedItemIndex = index;
   }
 
   public addItem(): void {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
-
     const dialogRef = this.dialog.open(TodoItemDialogComponent, dialogConfig);
 
     dialogRef.afterClosed().subscribe(data => { if (data != null) this.addItemInternal(data); });
@@ -75,91 +64,40 @@ export class TodoItemsComponent implements OnInit {
     item.todoListId = this.todoListId;
     item.task = data.task;
     item.dueDate = data.dueDate;
-    item.position = this.todoItems.length;
-    this.todoItemsProxy.createItem(item).subscribe(item => this.processCreation(item));
+    item.position = this.itemTable.count;
+    this.todoItemsProxy.createItem(item).subscribe(item => this.onItemCreated(item));
   }
 
-  public processCreation(item: TodoListItem) {
-    this.todoItems.push(item);
-    this.table.renderRows();
-    this.selectedItemIndex = this.todoItems.length - 1;
-    const args = new ItemCountChangedEventArgs(this.todoListId, this.todoItems.length);
+  public onItemCreated(item: TodoListItem) {
+    this.itemTable.addItem(item);
+    const args = new ItemCountChangedEventArgs(this.todoListId, this.itemTable.count);
     this.todoListService.fireItemCountChanged(args);
-  }
-
-  public itemChecked(event): void {
-    const item = this.todoItems[this.selectedItemIndex];
-    item.done = event.checked;
-    // make sure position is up to date, otherwise server may move item
-    item.position = this.selectedItemIndex;
-
-    // update in server
-    this.todoItemsProxy.updateItem(item.id, item).subscribe();
   }
 
   public removeItem(): void {
-    const removedItems = this.todoItems.splice(this.selectedItemIndex, 1);
-    this.table.renderRows();
-    if (this.selectedItemIndex == this.todoItems.length) {
-      this.selectedItemIndex -= 1;
-    }
-    const args = new ItemCountChangedEventArgs(this.todoListId, this.todoItems.length);
+    const id = this.itemTable.removeSelected();
+
+    const args = new ItemCountChangedEventArgs(this.todoListId, this.itemTable.count);
     this.todoListService.fireItemCountChanged(args);
 
     // update in server
-    this.todoItemsProxy.deleteItem(removedItems[0].id).subscribe();
+    this.todoItemsProxy.deleteItem(id).subscribe();
   }
 
-  public editItem(index: number): void {
-    const dialogConfig = new MatDialogConfig();
-    dialogConfig.disableClose = true;
-    dialogConfig.autoFocus = true;
-    dialogConfig.data = new TodoItemDialogData(
-      this.todoItems[index].task,
-      this.todoItems[index].dueDate);
-
-    const dialogRef = this.dialog.open(TodoItemDialogComponent, dialogConfig);
-
-    dialogRef.afterClosed().subscribe(data => { if (data != null) this.editItemInternal(data); }
-    );
-  }
-
-  private editItemInternal(data: TodoItemDialogData): void {
-    const item = this.todoItems[this.selectedItemIndex];
-    item.task = data.task;
-    item.dueDate = data.dueDate;
+  private onSelectedItemEdited(item: TodoListItem): void {
     // make sure position is up to date, otherwise server may move item
-    item.position = this.selectedItemIndex;
+    item.position = this.itemTable.selectedItemIndex;
 
     // update in server
     this.todoItemsProxy.updateItem(item.id, item).subscribe();
   }
 
-  moveUp(): void {
-    this.move(true);
-  }
-
   private move(up: boolean) {
-    const itemsToMove = this.todoItems.splice(this.selectedItemIndex, 1);
-    itemsToMove[0].position = up ? this.selectedItemIndex - 1 : this.selectedItemIndex + 1;
-    this.todoItems.splice(itemsToMove[0].position, 0, itemsToMove[0]);
-    this.selectedItemIndex = itemsToMove[0].position;
-    this.table.renderRows();
+    const position = this.itemTable.moveSelected(up);
+    const item = this.itemTable.getItemAt(this.itemTable.selectedItemIndex);
+    item.position = position;
 
     // update in server
-    this.todoItemsProxy.updateItem(itemsToMove[0].id, itemsToMove[0]).subscribe();
-  }
-
-  moveDown(): void {
-    this.move(false);
-  }
-
-  getDueString(date: Date): string {
-    const option = this.dueDateService.dateToEnum(date);
-    if (option == DueDateOption.None) {
-      return "";
-    } else {
-      return this.dueDateService.toString(option, date);
-    }
+    this.todoItemsProxy.updateItem(item.id, item).subscribe();
   }
 }

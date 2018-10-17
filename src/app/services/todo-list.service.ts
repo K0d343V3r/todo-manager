@@ -16,8 +16,8 @@ export class TodoListService {
   private itemCountChangedSource = new Subject<ItemCountChangedEventArgs>();
   itemCountChanged$ = this.itemCountChangedSource.asObservable();
 
-  private nameChangedSource = new Subject<NameChangedEventArgs>();
-  nameChanged$ = this.nameChangedSource.asObservable();
+  private listNameChangedSource = new Subject<NameChangedEventArgs>();
+  listNameChanged$ = this.listNameChangedSource.asObservable();
 
   constructor() { }
 
@@ -26,6 +26,6 @@ export class TodoListService {
   }
 
   fireNameChanged(args: NameChangedEventArgs): void {
-    this.nameChangedSource.next(args);
+    this.listNameChangedSource.next(args);
   }
 }

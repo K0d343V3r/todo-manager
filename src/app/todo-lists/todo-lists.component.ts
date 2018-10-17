@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { TodoElement, TodoElementsProxy, TodoList, TodoListsProxy } from '../proxies/todo-api-proxies';
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoListDialogComponent, TodoListDialogData } from '../todo-list-dialog/todo-list-dialog.component';
-import { ActivatedRoute, Router } from "@angular/router";
+import { Router } from "@angular/router";
 import { TodoListService, ItemCountChangedEventArgs, NameChangedEventArgs } from "../services/todo-list.service"
 
 @Component({
@@ -22,21 +22,16 @@ export class TodoListsComponent implements OnInit {
     private dialog: MatDialog) { }
 
   ngOnInit() {
-    this.getLists();
-
-    this.todoListService.itemCountChanged$.subscribe(args => this.processItemCountChange(args));
+    this.todoElementsProxy.getAllListElements().subscribe(elements => this.processElements(elements));
+    this.todoListService.itemCountChanged$.subscribe(args => this.onItemCountChange(args));
   }
 
-  private processItemCountChange(args: ItemCountChangedEventArgs) {
+  private onItemCountChange(args: ItemCountChangedEventArgs) {
     const index = this.todoElements.findIndex(entry => entry.id == args.id);
     if (index >= 0) {
       const element = this.todoElements[index];
       element.childCount = args.itemCount;
     }
-  }
-
-  getLists(): void {
-    this.todoElementsProxy.getAllListElements().subscribe(elements => this.processElements(elements));
   }
 
   private processElements(elements: TodoElement[]) {
@@ -63,10 +58,10 @@ export class TodoListsComponent implements OnInit {
     const list = new TodoList();
     list.name = data.name;
     list.position = this.todoElements.length;
-    this.todoListsProxy.createList(list).subscribe(list => this.processCreation(list));
+    this.todoListsProxy.createList(list).subscribe(list => this.onListCreated(list));
   }
 
-  private processCreation(list: TodoList): void {
+  private onListCreated(list: TodoList): void {
     const element = new TodoElement({ id: list.id, name: list.name, position: list.position, childCount: list.items.length });
     this.todoElements.push(element);
 
@@ -125,11 +120,7 @@ export class TodoListsComponent implements OnInit {
     this.todoElementsProxy.updateListElement(element.id, element).subscribe();
   }
 
-  moveUp(): void {
-    this.move(true);
-  }
-
-  private move(up: boolean) {
+  move(up: boolean) {
     const elementToMove = this.todoElements.splice(this.selectedElementIndex, 1);
     elementToMove[0].position = up ? this.selectedElementIndex - 1 : this.selectedElementIndex + 1;
     this.todoElements.splice(elementToMove[0].position, 0, elementToMove[0]);
@@ -137,9 +128,5 @@ export class TodoListsComponent implements OnInit {
 
     // update in server
     this.todoElementsProxy.updateListElement(elementToMove[0].id, elementToMove[0]).subscribe();
-  }
-
-  moveDown(): void {
-    this.move(false);
   }
 }
