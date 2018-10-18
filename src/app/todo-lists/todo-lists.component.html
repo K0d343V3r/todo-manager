@@ -1,6 +1,5 @@
 <mat-nav-list dense>
-  <mat-list-item *ngFor="let element of todoElements; let i = index" routerLinkActive="active" routerLink="/items/{{element.id}}"
-    (click)="onSelected(i)">
+  <mat-list-item *ngFor="let element of todoElements; let i = index" routerLinkActive="active" routerLink="/items/{{element.id}}">
     <a matLine>{{element.name}}</a>
     <span class="child-count" *ngIf="element.childCount > 0">{{element.childCount}}</span>
     <button mat-icon-button (click)="editList(i)">
@@ -12,13 +11,13 @@
   <button mat-icon-button (click)="addList()">
     <mat-icon>add</mat-icon>
   </button>
-  <button mat-icon-button [disabled]="todoElements.length == 0" (click)="removeList()">
+  <button mat-icon-button [disabled]="selectedElementIndex < 0" (click)="removeList()">
     <mat-icon>remove</mat-icon>
   </button>
   <button mat-icon-button [disabled]="selectedElementIndex <= 0" (click)="move(true)">
     <mat-icon>arrow_upward</mat-icon>
   </button>
-  <button mat-icon-button [disabled]="selectedElementIndex == todoElements.length - 1" (click)="move(false)">
+  <button mat-icon-button [disabled]="selectedElementIndex < 0 || selectedElementIndex == todoElements.length - 1" (click)="move(false)">
     <mat-icon>arrow_downward</mat-icon>
   </button>
 </mat-toolbar>

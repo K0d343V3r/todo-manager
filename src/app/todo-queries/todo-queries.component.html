@@ -1,0 +1,6 @@
+<mat-nav-list dense>
+  <mat-list-item routerLinkActive="active" routerLink="/results/{{myDayElement.id}}" (click)="onSelected(i)">
+    <a matLine>{{myDayElement.name}}</a>
+    <span class="child-count" *ngIf="myDayElement.childCount > 0">{{myDayElement.childCount}}</span>
+  </mat-list-item>
+</mat-nav-list>

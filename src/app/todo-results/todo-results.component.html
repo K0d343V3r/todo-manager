@@ -1,0 +1,22 @@
+<mat-toolbar color="primary">
+  <mat-toolbar-row>
+    <span>{{(todoQuery$ | async).name}}</span>
+  </mat-toolbar-row>
+  <mat-toolbar-row>
+    <span class="subtitle">{{subTitle}}</span>
+    <span class="fill-remaining-space"></span>
+    <button mat-icon-button (click)="addItem()">
+      <mat-icon>add</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="itemTable.count == 0" (click)="removeItem()">
+      <mat-icon>remove</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="!itemTable.canMove(true)" (click)="move(true)">
+      <mat-icon>arrow_upward</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="!itemTable.canMove(false)" (click)="move(false)">
+      <mat-icon>arrow_downward</mat-icon>
+    </button>
+  </mat-toolbar-row>
+</mat-toolbar>
+<app-todo-item-table #itemTable></app-todo-item-table>

@@ -2,8 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { TodoElement, TodoElementsProxy, TodoList, TodoListsProxy } from '../proxies/todo-api-proxies';
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoListDialogComponent, TodoListDialogData } from '../todo-list-dialog/todo-list-dialog.component';
-import { Router } from "@angular/router";
+import { Router, NavigationEnd } from "@angular/router";
 import { TodoListService, ItemCountChangedEventArgs, NameChangedEventArgs } from "../services/todo-list.service"
+import { Observable } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-todo-lists',
@@ -11,6 +13,8 @@ import { TodoListService, ItemCountChangedEventArgs, NameChangedEventArgs } from
   styleUrls: ['./todo-lists.component.css']
 })
 export class TodoListsComponent implements OnInit {
+  private readonly urlSection = "items";
+  private navigationEnd$: Observable<NavigationEnd>;
   selectedElementIndex: number = -1;
   todoElements: TodoElement[] = [];
 
@@ -22,8 +26,21 @@ export class TodoListsComponent implements OnInit {
     private dialog: MatDialog) { }
 
   ngOnInit() {
-    this.todoElementsProxy.getAllListElements().subscribe(elements => this.processElements(elements));
+    this.todoElementsProxy.getAllListElements().subscribe(elements => this.todoElements = elements);
     this.todoListService.itemCountChanged$.subscribe(args => this.onItemCountChange(args));
+    this.navigationEnd$ = this.router.events.pipe(filter(evt => evt instanceof NavigationEnd)) as Observable<NavigationEnd>;
+    this.navigationEnd$.subscribe(event => this.onUrlChanged(event.url));
+  }
+
+  private onUrlChanged(url: string) {
+    const parts: string[] = url.split("/");
+    if (parts[1] == this.urlSection) {
+      // parts[2] contains list id
+      this.selectedElementIndex = this.todoElements.findIndex(l => l.id == +parts[2]);
+    } else {
+      // not our url, reset index
+      this.selectedElementIndex = -1;
+    }
   }
 
   private onItemCountChange(args: ItemCountChangedEventArgs) {
@@ -31,15 +48,6 @@ export class TodoListsComponent implements OnInit {
     if (index >= 0) {
       const element = this.todoElements[index];
       element.childCount = args.itemCount;
-    }
-  }
-
-  private processElements(elements: TodoElement[]) {
-    this.todoElements = elements;
-    if (elements.length > 0) {
-      // select first element in list, and route to it
-      this.selectedElementIndex = 0;
-      this.router.navigate([`items/${elements[0].id}`]);
     }
   }
 
@@ -67,11 +75,7 @@ export class TodoListsComponent implements OnInit {
 
     // select the newly created item, and route to it
     this.selectedElementIndex = this.todoElements.length - 1;
-    this.router.navigate([`items/${list.id}`]);
-  }
-
-  public onSelected(index: number): void {
-    this.selectedElementIndex = index;
+    this.router.navigate([`${this.urlSection}/${list.id}`]);
   }
 
   public removeList(): void {
@@ -85,7 +89,7 @@ export class TodoListsComponent implements OnInit {
       if (this.selectedElementIndex == this.todoElements.length) {
         this.selectedElementIndex -= 1;
       }
-      this.router.navigate([`items/${this.todoElements[this.selectedElementIndex].id}`]);
+      this.router.navigate([`${this.urlSection}/${this.todoElements[this.selectedElementIndex].id}`]);
     }
 
     // remove from server

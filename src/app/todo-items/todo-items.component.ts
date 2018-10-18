@@ -6,7 +6,6 @@ import { switchMap } from 'rxjs/operators';
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoItemDialogComponent, TodoItemDialogData } from '../todo-item-dialog/todo-item-dialog.component';
 import { TodoListService, ItemCountChangedEventArgs, NameChangedEventArgs } from "../services/todo-list.service";
-import { DueDateService } from '../services/due-date.service';
 import { TodoItemTableComponent } from '../todo-item-table/todo-item-table.component';
 
 @Component({
