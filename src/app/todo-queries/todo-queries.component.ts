@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { TodoQuery, TodoQueriesProxy, TodoElement, TodoElementsProxy, SwaggerException, QueryOperand, QueryOperator } from '../proxies/todo-api-proxies';
+import { TodoQuery, TodoQueriesProxy, TodoElement, TodoElementsProxy, QueryOperand, QueryOperator } from '../proxies/todo-api-proxies';
 import { Router } from "@angular/router";
 
 @Component({
@@ -9,26 +9,33 @@ import { Router } from "@angular/router";
 })
 export class TodoQueriesComponent implements OnInit {
   private readonly myDayQueryId: number = 1;
-  myDayElement: TodoElement;
+  private readonly myDayQueryName: string = "My Day";
+  myDayQuery: TodoQuery;
+  myDayQueryResultCount: number;
 
   constructor(
     private todoElementsProxy: TodoElementsProxy,
     private todoQueriesProxy: TodoQueriesProxy,
-    private router: Router,
+    private router: Router
   ) { }
 
   ngOnInit() {
     // attempt to update query to today's date
     const myDayQuery = this.createMyDayQuery();
-    this.todoQueriesProxy.updateQuery(myDayQuery.id, myDayQuery).subscribe(
-      query => this.initializeMyDayElement(query),
-      ex => this.onUpdateMyDayQueryError(ex)
-      );
+    this.todoQueriesProxy.updateQuery(this.myDayQueryId, myDayQuery).subscribe(query => {
+      this.initializeMyDayElement(query);
+    }, ex => {
+      if (ex.status == 404) {
+        // my day query does not exist, create it now
+        myDayQuery.id = 0; // ids are auto-generated
+        this.todoQueriesProxy.createQuery(myDayQuery).subscribe(query => this.initializeMyDayElement(query));
+      }
+    });
   }
 
   private initializeMyDayElement(query: TodoQuery) {
-    // create element
-    this.myDayElement = this.createMyDayElement(query);
+    // initialize query
+    this.myDayQuery = query;
 
     // and route to it
     this.router.navigate([`results/${query.id}`]);
@@ -37,28 +44,10 @@ export class TodoQueriesComponent implements OnInit {
   private createMyDayQuery(): TodoQuery {
     const query = new TodoQuery();
     query.id = this.myDayQueryId;
-    query.name = "My Day";
+    query.name = this.myDayQueryName;
     query.operand = QueryOperand.DueDate;
     query.operator = QueryOperator.Equals;
     query.dateValue = new Date();
     return query;
-  }
-
-  private createMyDayElement(query: TodoQuery): TodoElement {
-    // use child count of zero, updated once query is executed via route
-    return new TodoElement({ id: query.id, name: query.name, position: query.position, childCount: 0 });
-  }
-
-  private onUpdateMyDayQueryError(ex: SwaggerException) {
-    if (ex.status == 404) {
-      // query item does not exist, create one now
-      this.todoQueriesProxy.createQuery(this.createMyDayQuery()).subscribe(
-        query => this.initializeMyDayElement(query)
-      );
-    }
-  }
-
-  onSelected(index: number) {
-    
   }
 }
