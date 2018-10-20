@@ -22,7 +22,9 @@ export interface ITodoElementsProxy {
     updateQueryElement(id: number, element: TodoElement | null): Observable<TodoElement | null>;
 }
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class TodoElementsProxy implements ITodoElementsProxy {
     private http: HttpClient;
     private baseUrl: string;
@@ -375,7 +377,9 @@ export interface ITodoItemsProxy {
     deleteItem(id: number): Observable<number>;
 }
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class TodoItemsProxy implements ITodoItemsProxy {
     private http: HttpClient;
     private baseUrl: string;
@@ -727,7 +731,9 @@ export interface ITodoListsProxy {
     deleteList(id: number): Observable<number>;
 }
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class TodoListsProxy implements ITodoListsProxy {
     private http: HttpClient;
     private baseUrl: string;
@@ -889,6 +895,10 @@ export class TodoListsProxy implements ITodoListsProxy {
             return _observableOf(result200);
             }));
         } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
+        } else if (status === 400) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("A server error occurred.", status, _responseText, _headers);
             }));
@@ -1061,6 +1071,10 @@ export class TodoListsProxy implements ITodoListsProxy {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("A server error occurred.", status, _responseText, _headers);
             }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -1080,7 +1094,9 @@ export interface ITodoQueriesProxy {
     executeQuery(id: number): Observable<TodoQueryResult[] | null>;
 }
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class TodoQueriesProxy implements ITodoQueriesProxy {
     private http: HttpClient;
     private baseUrl: string;

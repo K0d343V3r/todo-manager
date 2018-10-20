@@ -34,7 +34,6 @@ import { TodoResultsComponent } from './todo-results/todo-results.component';
     RoutingModule,
     MaterialModule
   ],
-  providers: [TodoQueriesProxy, TodoElementsProxy, TodoListsProxy, TodoItemsProxy],
   bootstrap: [AppComponent],
   entryComponents: [TodoListDialogComponent, TodoItemDialogComponent]
 })

@@ -3,7 +3,7 @@ import { TodoElement, TodoElementsProxy, TodoList, TodoListItem, TodoListsProxy 
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoListDialogComponent, TodoListDialogData } from '../todo-list-dialog/todo-list-dialog.component';
 import { Router, NavigationEnd } from "@angular/router";
-import { TodoListService, NameChangedEventArgs } from "../services/todo-list.service"
+import { TodoListService, NameChangedEventArgs } from "../services/todo-list.service";
 import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 

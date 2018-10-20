@@ -3,4 +3,8 @@
     <a matLine>{{myDayQuery.name}}</a>
     <span class="child-count" *ngIf="myDayQueryResultCount > 0">{{myDayQueryResultCount}}</span>
   </mat-list-item>
+  <mat-list-item routerLinkActive="active" routerLink="/items/{{myTasksElement.id}}">
+    <a matLine>{{myTasksElement.name}}</a>
+    <span class="child-count" *ngIf="myTasksElement.childCount > 0">{{myTasksElement.childCount}}</span>
+  </mat-list-item>
 </mat-nav-list>
