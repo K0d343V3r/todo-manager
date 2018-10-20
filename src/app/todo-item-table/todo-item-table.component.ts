@@ -3,6 +3,7 @@ import { TodoListItem } from '../proxies/todo-api-proxies';
 import { DueDateOption, DueDateService } from '../services/due-date.service'
 import { MatDialog, MatDialogConfig, MatTable } from "@angular/material";
 import { TodoItemDialogComponent, TodoItemDialogData } from '../todo-item-dialog/todo-item-dialog.component';
+import { TodoListService } from "../services/todo-list.service";
 
 @Component({
   selector: 'app-todo-item-table',
@@ -15,6 +16,7 @@ export class TodoItemTableComponent {
 
   constructor(
     private dueDateService: DueDateService,
+    private todoListService: TodoListService,
     private dialog: MatDialog
   ) { }
 
@@ -50,6 +52,8 @@ export class TodoItemTableComponent {
     this.viewItems.splice(item.position, 0, item);
     this.itemTable.renderRows();
     this.changeSelectedIndex(item.position);
+
+    this.todoListService.fireItemAdded(item);
   }
 
   private adjustInsertionIndex(item: TodoListItem) {
@@ -90,6 +94,8 @@ export class TodoItemTableComponent {
         this.changeSelectedIndex(this.selectedItemIndex - 1);
       }
       this.itemTable.renderRows();
+
+      this.todoListService.fireItemRemoved(removedItems[0]);
       return removedItems[0].id;
     }
 
@@ -150,6 +156,7 @@ export class TodoItemTableComponent {
     item.task = data.task;
     item.dueDate = data.dueDate;
 
+    this.todoListService.fireItemEdited(item);
     this.selectedItemEdited.emit(item);
   }
 

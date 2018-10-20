@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { TodoElement, TodoElementsProxy, TodoList, TodoListsProxy } from '../proxies/todo-api-proxies';
+import { TodoElement, TodoElementsProxy, TodoList, TodoListItem, TodoListsProxy } from '../proxies/todo-api-proxies';
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoListDialogComponent, TodoListDialogData } from '../todo-list-dialog/todo-list-dialog.component';
 import { Router, NavigationEnd } from "@angular/router";
-import { TodoListService, ItemCountChangedEventArgs, NameChangedEventArgs } from "../services/todo-list.service"
+import { TodoListService, NameChangedEventArgs } from "../services/todo-list.service"
 import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -27,7 +27,8 @@ export class TodoListsComponent implements OnInit {
 
   ngOnInit() {
     this.todoElementsProxy.getAllListElements().subscribe(elements => this.todoElements = elements);
-    this.todoListService.itemCountChanged$.subscribe(args => this.onItemCountChange(args));
+    this.todoListService.itemAdded$.subscribe(item => this.onListItemsChanged(item, true));
+    this.todoListService.itemRemoved$.subscribe(item => this.onListItemsChanged(item, false));
     this.navigationEnd$ = this.router.events.pipe(filter(evt => evt instanceof NavigationEnd)) as Observable<NavigationEnd>;
     this.navigationEnd$.subscribe(event => this.onUrlChanged(event.url));
   }
@@ -43,11 +44,14 @@ export class TodoListsComponent implements OnInit {
     }
   }
 
-  private onItemCountChange(args: ItemCountChangedEventArgs) {
-    const index = this.todoElements.findIndex(entry => entry.id == args.id);
+  private onListItemsChanged(item: TodoListItem, add: boolean) {
+    const index = this.todoElements.findIndex(entry => entry.id == item.todoListId);
     if (index >= 0) {
-      const element = this.todoElements[index];
-      element.childCount = args.itemCount;
+      if (add) {
+        this.todoElements[index].childCount++;
+      } else {
+        this.todoElements[index].childCount--;
+      }
     }
   }
 
