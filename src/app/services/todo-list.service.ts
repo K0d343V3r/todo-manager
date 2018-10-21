@@ -6,6 +6,10 @@ export class NameChangedEventArgs {
   constructor(public listId: number, public name: string) {}
 }
 
+export class ItemEditedEventArgs {
+  constructor(public oldItem: TodoListItem, public newItem: TodoListItem) {}
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -16,7 +20,7 @@ export class TodoListService {
   private itemRemovedSource = new Subject<TodoListItem>();
   itemRemoved$ = this.itemRemovedSource.asObservable();
 
-  private itemEditedSource = new Subject<TodoListItem>();
+  private itemEditedSource = new Subject<ItemEditedEventArgs>();
   itemEdited$ = this.itemEditedSource.asObservable();
 
   private listNameChangedSource = new Subject<NameChangedEventArgs>();
@@ -32,8 +36,8 @@ export class TodoListService {
     this.itemRemovedSource.next(item);
   }
 
-  fireItemEdited(item: TodoListItem): void {
-    this.itemEditedSource.next(item);
+  fireItemEdited(args: ItemEditedEventArgs): void {
+    this.itemEditedSource.next(args);
   }
 
   fireNameChanged(args: NameChangedEventArgs): void {

@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { TodoQuery, TodoQueriesProxy, TodoElement, TodoElementsProxy, QueryOperand, QueryOperator, TodoListItem } from '../proxies/todo-api-proxies';
+import { TodoQuery, TodoQueriesProxy, TodoElement, TodoElementsProxy, QueryOperand, QueryOperator, TodoListItem, TodoQueryResults } from '../proxies/todo-api-proxies';
 import { Router } from "@angular/router";
-import { TodoListService } from "../services/todo-list.service";
+import { TodoListService, ItemEditedEventArgs } from "../services/todo-list.service";
+import { TodoQueryService } from '../services/todo-query.service';
+import { DueDateService } from '../services/due-date.service'
 
 @Component({
   selector: 'app-todo-queries',
@@ -23,6 +25,8 @@ export class TodoQueriesComponent implements OnInit {
     private todoElementsProxy: TodoElementsProxy,
     private todoQueriesProxy: TodoQueriesProxy,
     private todoListService: TodoListService,
+    private todoQueryService: TodoQueryService,
+    private dueDateService: DueDateService,
     private router: Router
   ) { }
 
@@ -47,6 +51,25 @@ export class TodoQueriesComponent implements OnInit {
 
     this.todoListService.itemAdded$.subscribe(item => this.onListItemsChanged(item, true));
     this.todoListService.itemRemoved$.subscribe(item => this.onListItemsChanged(item, false));
+    this.todoListService.itemEdited$.subscribe(args => this.onItemEdited(args));
+    this.todoQueryService.queryExecuted$.subscribe(results => this.onQueryExecuted(results));
+  }
+
+  private onItemEdited(args:  ItemEditedEventArgs) {
+    const wasInResults = this.todoQueryService.inResults(this.myDayQuery, args.oldItem);
+    const isInResults = this.todoQueryService.inResults(this.myDayQuery, args.newItem);
+
+    if (wasInResults && !isInResults) {
+      this.myDayQueryResultCount--;
+    } else if (!wasInResults && isInResults) {
+      this.myDayQueryResultCount++;
+    }
+  }
+
+  private onQueryExecuted(results: TodoQueryResults) {
+    if (results.todoQueryId == this.myDayQueryId) {
+      this.myDayQueryResultCount = results.references.length;
+    }
   }
 
   private onListItemsChanged(item: TodoListItem, add: boolean) {
@@ -56,6 +79,13 @@ export class TodoQueriesComponent implements OnInit {
       } else {
         this.myTasksElement.childCount--;
       }
+    }
+
+    const inResults = this.todoQueryService.inResults(this.myDayQuery, item);
+    if (inResults && add) {
+      this.myDayQueryResultCount++;
+    } else if (inResults && !add) {
+      this.myDayQueryResultCount--;
     }
   }
 
@@ -70,6 +100,9 @@ export class TodoQueriesComponent implements OnInit {
     // initialize query
     this.myDayQuery = query;
 
+    // executed it
+    this.todoQueryService.executeQuery(query.id);
+
     // and route to it
     this.router.navigate([`results/${query.id}`]);
   }
@@ -80,7 +113,7 @@ export class TodoQueriesComponent implements OnInit {
     query.name = this.myDayQueryName;
     query.operand = QueryOperand.DueDate;
     query.operator = QueryOperator.Equals;
-    query.dateValue = new Date();
+    query.dateValue = this.dueDateService.toEndOfDay(new Date());
     return query;
   }
 }

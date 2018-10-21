@@ -40,7 +40,7 @@ export class TodoItemTableComponent {
   getItemAt(index: number): TodoListItem {
     if (index >= 0 && index < this.viewItems.length) {
       // return a copy of the item
-      return Object.create(this.viewItems[this._selectedItemIndex]);
+      return this.viewItems[this._selectedItemIndex].clone();
     }
 
     return null;
@@ -126,10 +126,12 @@ export class TodoItemTableComponent {
   viewColumns: string[] = ['done', 'task', 'dueDate', 'edit'];
 
   viewItemChecked(event): void {
-    const item = this.viewItems[this.selectedItemIndex];
-    item.done = event.checked;
+    const oldItem = this.viewItems[this.selectedItemIndex].clone();
+    const newItem = this.viewItems[this.selectedItemIndex];
+    newItem.done = event.checked;
 
-    this.selectedItemEdited.emit(item);
+    this.todoListService.fireItemEdited({oldItem: oldItem, newItem: newItem});
+    this.selectedItemEdited.emit(newItem);
   }
 
   viewGetDueString(date: Date): string {
@@ -152,12 +154,13 @@ export class TodoItemTableComponent {
   }
 
   private editItem(data: TodoItemDialogData): void {
-    const item = this.viewItems[this.selectedItemIndex];
-    item.task = data.task;
-    item.dueDate = data.dueDate;
+    const oldItem = this.viewItems[this.selectedItemIndex].clone();
+    const newItem = this.viewItems[this.selectedItemIndex];
+    newItem.task = data.task;
+    newItem.dueDate = data.dueDate;
 
-    this.todoListService.fireItemEdited(item);
-    this.selectedItemEdited.emit(item);
+    this.todoListService.fireItemEdited({oldItem: oldItem, newItem: newItem});
+    this.selectedItemEdited.emit(newItem);
   }
 
   viewRowSelected(index: number) {

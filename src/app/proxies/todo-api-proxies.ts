@@ -1091,7 +1091,7 @@ export interface ITodoQueriesProxy {
     getQuery(id: number): Observable<TodoQuery | null>;
     updateQuery(id: number, query: TodoQuery | null): Observable<TodoQuery | null>;
     deleteQuery(id: number): Observable<number>;
-    executeQuery(id: number): Observable<TodoQueryResult[] | null>;
+    executeQuery(id: number): Observable<TodoQueryResults | null>;
 }
 
 @Injectable({
@@ -1438,7 +1438,7 @@ export class TodoQueriesProxy implements ITodoQueriesProxy {
         return _observableOf<number>(<any>null);
     }
 
-    executeQuery(id: number): Observable<TodoQueryResult[] | null> {
+    executeQuery(id: number): Observable<TodoQueryResults | null> {
         let url_ = this.baseUrl + "/api/TodoQueries/{id}/results";
         if (id === undefined || id === null)
             throw new Error("The parameter 'id' must be defined.");
@@ -1460,14 +1460,14 @@ export class TodoQueriesProxy implements ITodoQueriesProxy {
                 try {
                     return this.processExecuteQuery(<any>response_);
                 } catch (e) {
-                    return <Observable<TodoQueryResult[] | null>><any>_observableThrow(e);
+                    return <Observable<TodoQueryResults | null>><any>_observableThrow(e);
                 }
             } else
-                return <Observable<TodoQueryResult[] | null>><any>_observableThrow(response_);
+                return <Observable<TodoQueryResults | null>><any>_observableThrow(response_);
         }));
     }
 
-    protected processExecuteQuery(response: HttpResponseBase): Observable<TodoQueryResult[] | null> {
+    protected processExecuteQuery(response: HttpResponseBase): Observable<TodoQueryResults | null> {
         const status = response.status;
         const responseBlob = 
             response instanceof HttpResponse ? response.body : 
@@ -1478,11 +1478,7 @@ export class TodoQueriesProxy implements ITodoQueriesProxy {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            if (resultData200 && resultData200.constructor === Array) {
-                result200 = [];
-                for (let item of resultData200)
-                    result200.push(TodoQueryResult.fromJS(item));
-            }
+            result200 = resultData200 ? TodoQueryResults.fromJS(resultData200) : <any>null;
             return _observableOf(result200);
             }));
         } else if (status === 404) {
@@ -1494,7 +1490,7 @@ export class TodoQueriesProxy implements ITodoQueriesProxy {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             }));
         }
-        return _observableOf<TodoQueryResult[] | null>(<any>null);
+        return _observableOf<TodoQueryResults | null>(<any>null);
     }
 }
 
@@ -1787,11 +1783,66 @@ export enum QueryOperator {
     NotEquals = 1, 
 }
 
-export class TodoQueryResult extends EntityBase implements ITodoQueryResult {
+export class TodoQueryResults implements ITodoQueryResults {
+    todoQueryId!: number;
+    references?: TodoItemReference[] | undefined;
+
+    constructor(data?: ITodoQueryResults) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(data?: any) {
+        if (data) {
+            this.todoQueryId = data["todoQueryId"];
+            if (data["references"] && data["references"].constructor === Array) {
+                this.references = [];
+                for (let item of data["references"])
+                    this.references.push(TodoItemReference.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): TodoQueryResults {
+        data = typeof data === 'object' ? data : {};
+        let result = new TodoQueryResults();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["todoQueryId"] = this.todoQueryId;
+        if (this.references && this.references.constructor === Array) {
+            data["references"] = [];
+            for (let item of this.references)
+                data["references"].push(item.toJSON());
+        }
+        return data; 
+    }
+
+    clone(): TodoQueryResults {
+        const json = this.toJSON();
+        let result = new TodoQueryResults();
+        result.init(json);
+        return result;
+    }
+}
+
+export interface ITodoQueryResults {
+    todoQueryId: number;
+    references?: TodoItemReference[] | undefined;
+}
+
+export class TodoItemReference extends EntityBase implements ITodoItemReference {
     item?: TodoListItem | undefined;
     todoQueryId!: number;
 
-    constructor(data?: ITodoQueryResult) {
+    constructor(data?: ITodoItemReference) {
         super(data);
     }
 
@@ -1803,9 +1854,9 @@ export class TodoQueryResult extends EntityBase implements ITodoQueryResult {
         }
     }
 
-    static fromJS(data: any): TodoQueryResult {
+    static fromJS(data: any): TodoItemReference {
         data = typeof data === 'object' ? data : {};
-        let result = new TodoQueryResult();
+        let result = new TodoItemReference();
         result.init(data);
         return result;
     }
@@ -1818,15 +1869,15 @@ export class TodoQueryResult extends EntityBase implements ITodoQueryResult {
         return data; 
     }
 
-    clone(): TodoQueryResult {
+    clone(): TodoItemReference {
         const json = this.toJSON();
-        let result = new TodoQueryResult();
+        let result = new TodoItemReference();
         result.init(json);
         return result;
     }
 }
 
-export interface ITodoQueryResult extends IEntityBase {
+export interface ITodoItemReference extends IEntityBase {
     item?: TodoListItem | undefined;
     todoQueryId: number;
 }
