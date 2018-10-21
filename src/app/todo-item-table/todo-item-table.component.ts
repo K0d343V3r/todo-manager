@@ -2,7 +2,7 @@ import { Component, OnInit, Input, Output, EventEmitter, ViewChild } from '@angu
 import { TodoListItem } from '../proxies/todo-api-proxies';
 import { DueDateOption, DueDateService } from '../services/due-date.service'
 import { MatDialog, MatDialogConfig, MatTable } from "@angular/material";
-import { TodoItemDialogComponent, TodoItemDialogData } from '../todo-item-dialog/todo-item-dialog.component';
+import { TodoItemDialogComponent, TodoItemDialogData, TodoItemDialogDataValues } from '../todo-item-dialog/todo-item-dialog.component';
 import { TodoListService } from "../services/todo-list.service";
 
 @Component({
@@ -47,21 +47,22 @@ export class TodoItemTableComponent {
   }
 
   /** Adds new item to the table. */
-  addItem(item: TodoListItem): void {
-    this.adjustInsertionIndex(item);
-    this.viewItems.splice(item.position, 0, item);
+  addItem(index: number, item: TodoListItem): void {
+    this.adjustInsertionIndex(index);
+    this.viewItems.splice(index, 0, item);
     this.itemTable.renderRows();
-    this.changeSelectedIndex(item.position);
+    this.changeSelectedIndex(index);
 
     this.todoListService.fireItemAdded(item);
   }
 
-  private adjustInsertionIndex(item: TodoListItem) {
-    if (item.position < 0) {
-      item.position = 0;
-    } else if (item.position > this.viewItems.length) {
-      item.position = this.viewItems.length;
+  private adjustInsertionIndex(index: number): number {
+    if (index < 0 || index > this.viewItems.length) {
+      // index outside list scope, assume append
+      return this.viewItems.length;
     }
+
+    return index;
   }
 
   /** Clears the table and adds multiple items. */
@@ -87,7 +88,7 @@ export class TodoItemTableComponent {
   }
 
   /** Deletes the currently selected item. */
-  removeSelected(): number {
+  removeSelected(fromListOnly: boolean = false): number {
     if (this.selectedItemIndex >= 0) {
       const removedItems = this.viewItems.splice(this.selectedItemIndex, 1);
       if (this.selectedItemIndex == this.viewItems.length) {
@@ -95,7 +96,9 @@ export class TodoItemTableComponent {
       }
       this.itemTable.renderRows();
 
-      this.todoListService.fireItemRemoved(removedItems[0]);
+      if (!fromListOnly) {
+        this.todoListService.fireItemRemoved(removedItems[0]);
+      }
       return removedItems[0].id;
     }
 
@@ -130,7 +133,7 @@ export class TodoItemTableComponent {
     const newItem = this.viewItems[this.selectedItemIndex];
     newItem.done = event.checked;
 
-    this.todoListService.fireItemEdited({oldItem: oldItem, newItem: newItem});
+    this.todoListService.fireItemEdited({ oldItem: oldItem, newItem: newItem });
     this.selectedItemEdited.emit(newItem);
   }
 
@@ -147,19 +150,21 @@ export class TodoItemTableComponent {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
-    dialogConfig.data = new TodoItemDialogData(this.viewItems[index].task, this.viewItems[index].dueDate);
+    const values = new TodoItemDialogDataValues(this.viewItems[index].task, this.viewItems[index].dueDate);
+    dialogConfig.data = new TodoItemDialogData(false, values);
+
     const dialogRef = this.dialog.open(TodoItemDialogComponent, dialogConfig);
 
-    dialogRef.afterClosed().subscribe(data => { if (data != null) this.editItem(data); });
+    dialogRef.afterClosed().subscribe(values => { if (values != null) this.editItem(values); });
   }
 
-  private editItem(data: TodoItemDialogData): void {
+  private editItem(values: TodoItemDialogDataValues): void {
     const oldItem = this.viewItems[this.selectedItemIndex].clone();
     const newItem = this.viewItems[this.selectedItemIndex];
-    newItem.task = data.task;
-    newItem.dueDate = data.dueDate;
+    newItem.task = values.task;
+    newItem.dueDate = values.dueDate;
 
-    this.todoListService.fireItemEdited({oldItem: oldItem, newItem: newItem});
+    this.todoListService.fireItemEdited({ oldItem: oldItem, newItem: newItem });
     this.selectedItemEdited.emit(newItem);
   }
 

@@ -8,9 +8,12 @@ export interface DueDateOptions {
   viewValue: string;
 }
 
+export class TodoItemDialogDataValues {
+  constructor(public task: string, public dueDate: Date) { }
+}
+
 export class TodoItemDialogData {
-  constructor(public task: string, public dueDate: Date) {
-  }
+  constructor(public add: boolean, public values: TodoItemDialogDataValues = null) { }
 }
 
 @Component({
@@ -18,7 +21,7 @@ export class TodoItemDialogData {
   templateUrl: './todo-item-dialog.component.html',
   styleUrls: ['./todo-item-dialog.component.css']
 })
-export class TodoItemDialogComponent implements OnInit {
+export class TodoItemDialogComponent {
   form1: FormGroup;
   task: string;
   title: string;
@@ -31,15 +34,17 @@ export class TodoItemDialogComponent implements OnInit {
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<TodoItemDialogComponent>,
     @Inject(MAT_DIALOG_DATA) data: TodoItemDialogData) {
-    if (data == null) {
+    if (data.add) {
       this.title = "New Todo";
-      this.selectedDueOption = DueDateOption.None;
-      this.dueDate = new Date();
+      if (data.values == null) {
+        this.selectedDueOption = DueDateOption.None;
+        this.dueDate = new Date();
+      } else {
+        this.initializeDialog(data.values);
+      }
     } else {
       this.title = "Edit Todo";
-      this.selectedDueOption = this.dueDateService.dateToEnum(data.dueDate);
-      this.task = data.task;
-      this.dueDate = data.dueDate;
+      this.initializeDialog(data.values);
     }
 
     this.form1 = fb.group({
@@ -57,12 +62,15 @@ export class TodoItemDialogComponent implements OnInit {
     ];
   }
 
-  ngOnInit() {
+  private initializeDialog(values: TodoItemDialogDataValues) {
+    this.selectedDueOption = this.dueDateService.dateToEnum(values.dueDate);
+    this.task = values.task;
+    this.dueDate = values.dueDate;
   }
 
   save() {
     const date = this.dueDateService.enumToDate(this.form1.value.due, this.form1.value.dueDate);
-    this.dialogRef.close(new TodoItemDialogData(this.form1.value.task, date));
+    this.dialogRef.close(new TodoItemDialogDataValues(this.form1.value.task, date));
   }
 
   cancel() {

@@ -100,9 +100,6 @@ export class TodoQueriesComponent implements OnInit {
     // initialize query
     this.myDayQuery = query;
 
-    // executed it
-    this.todoQueryService.executeQuery(query.id);
-
     // and route to it
     this.router.navigate([`results/${query.id}`]);
   }

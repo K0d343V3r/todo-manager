@@ -4,7 +4,7 @@ import { ActivatedRoute, ParamMap } from '@angular/router';
 import { Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { MatDialog, MatDialogConfig } from "@angular/material";
-import { TodoItemDialogComponent, TodoItemDialogData } from '../todo-item-dialog/todo-item-dialog.component';
+import { TodoItemDialogComponent, TodoItemDialogData, TodoItemDialogDataValues } from '../todo-item-dialog/todo-item-dialog.component';
 import { TodoListService, NameChangedEventArgs } from "../services/todo-list.service";
 import { TodoItemTableComponent } from '../todo-item-table/todo-item-table.component';
 
@@ -53,22 +53,24 @@ export class TodoItemsComponent implements OnInit {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
+    dialogConfig.data = new TodoItemDialogData(true);
+
     const dialogRef = this.dialog.open(TodoItemDialogComponent, dialogConfig);
 
-    dialogRef.afterClosed().subscribe(data => { if (data != null) this.addItemInternal(data); });
+    dialogRef.afterClosed().subscribe(values => { if (values != null) this.addItemInternal(values); });
   }
 
-  private addItemInternal(data: TodoItemDialogData): void {
+  private addItemInternal(values: TodoItemDialogDataValues): void {
     const item = new TodoListItem();
     item.todoListId = this.todoListId;
-    item.task = data.task;
-    item.dueDate = data.dueDate;
+    item.task = values.task;
+    item.dueDate = values.dueDate;
     item.position = this.itemTable.count;
     this.todoItemsProxy.createItem(item).subscribe(item => this.onItemCreated(item));
   }
 
   public onItemCreated(item: TodoListItem) {
-    this.itemTable.addItem(item);
+    this.itemTable.addItem(item.position, item);
   }
 
   public removeItem(): void {
