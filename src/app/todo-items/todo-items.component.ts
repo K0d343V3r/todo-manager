@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoItemDialogComponent, TodoItemDialogData, TodoItemDialogDataValues } from '../todo-item-dialog/todo-item-dialog.component';
-import { TodoListService, NameChangedEventArgs } from "../services/todo-list.service";
+import { TodoListService, NameChangedEventArgs, ItemEditedEventArgs } from "../services/todo-list.service";
 import { TodoItemTableComponent } from '../todo-item-table/todo-item-table.component';
 
 @Component({
@@ -33,7 +33,7 @@ export class TodoItemsComponent implements OnInit {
     );
 
     this.todoList$.subscribe(list => this.onTodoListChanged(list));
-    this.itemTable.selectedItemEdited.subscribe(item => this.onSelectedItemEdited(item));
+    this.itemTable.selectedItemEdited.subscribe(args => this.onSelectedItemEdited(args));
     this.todoListService.listNameChanged$.subscribe(args => this.onListNameChanged(args));
   }
 
@@ -71,21 +71,30 @@ export class TodoItemsComponent implements OnInit {
 
   public onItemCreated(item: TodoListItem) {
     this.itemTable.addItem(item.position, item);
+
+    // broadcast new item addition
+    this.todoListService.fireItemAdded(item);
   }
 
   public removeItem(): void {
-    const id = this.itemTable.removeSelected();
+    const item = this.itemTable.removeSelected();
+
+    // broadcast item removal
+    this.todoListService.fireItemRemoved(item);
 
     // update in server
-    this.todoItemsProxy.deleteItem(id).subscribe();
+    this.todoItemsProxy.deleteItem(item.id).subscribe();
   }
 
-  private onSelectedItemEdited(item: TodoListItem): void {
+  private onSelectedItemEdited(args: ItemEditedEventArgs): void {
+    // broadcast item update
+    this.todoListService.fireItemEdited(args);
+
     // make sure position is up to date, otherwise server may move item
-    item.position = this.itemTable.selectedItemIndex;
+    args.newItem.position = this.itemTable.selectedItemIndex;
 
     // update in server
-    this.todoItemsProxy.updateItem(item.id, item).subscribe();
+    this.todoItemsProxy.updateItem(args.newItem.id, args.newItem).subscribe();
   }
 
   private move(up: boolean) {

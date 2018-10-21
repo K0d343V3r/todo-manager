@@ -7,6 +7,7 @@ import { TodoItemTableComponent } from '../todo-item-table/todo-item-table.compo
 import { TodoQueryService } from '../services/todo-query.service';
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoItemDialogComponent, TodoItemDialogData, TodoItemDialogDataValues } from '../todo-item-dialog/todo-item-dialog.component';
+import { TodoListService, ItemEditedEventArgs } from "../services/todo-list.service";
 
 @Component({
   selector: 'app-todo-results',
@@ -24,6 +25,7 @@ export class TodoResultsComponent implements OnInit {
     private todoQueriesProxy: TodoQueriesProxy,
     private todoQueryService: TodoQueryService,
     private todoItemsProxy: TodoItemsProxy,
+    private todoListService: TodoListService,
     private dialog: MatDialog
   ) { }
 
@@ -34,20 +36,26 @@ export class TodoResultsComponent implements OnInit {
     this.todoQuery$.subscribe(query => this.onTodoQueryChanged(query));
 
     this.todoQueryService.queryExecuted$.subscribe(results => this.onQueryExecuted(results));
-    this.itemTable.selectedItemEdited.subscribe(item => this.onSelectedItemEdited(item));
+    this.itemTable.selectedItemEdited.subscribe(args => this.onSelectedItemEdited(args));
   }
 
-  private onSelectedItemEdited(item: TodoListItem): void {
-    if (!this.todoQueryService.inResults(this.todoQuery, item)) {
-      // edited item no longer meets query criteria, remove from list
-      this.itemTable.removeSelected(true);
-    }
+  private onSelectedItemEdited(args: ItemEditedEventArgs): void {
+    // broadcast item update
+    this.todoListService.fireItemEdited(args);
 
-    // update in server
-    this.todoItemsProxy.updateItem(item.id, item).subscribe(() =>
-      // re-execute query to make server match client state
-      this.todoQueryService.executeQuery(this.todoQuery.id)
-    );
+    if (this.todoQueryService.inResults(this.todoQuery, args.newItem)) {
+      // edited item still meets query criteria, just update item in server
+      this.todoItemsProxy.updateItem(args.newItem.id, args.newItem).subscribe();
+    } else {
+      // edited item no longer meets query criteria, remove from list
+      this.itemTable.removeSelected();
+
+      // and update server
+      this.todoItemsProxy.updateItem(args.newItem.id, args.newItem).subscribe(() =>
+        // re-execute query to make server match client state
+        this.todoQueryService.executeQuery(this.todoQuery.id)
+      );
+    }
   }
 
   private onTodoQueryChanged(query: TodoQuery) {
@@ -92,10 +100,13 @@ export class TodoResultsComponent implements OnInit {
     if (this.todoQueryService.inResults(this.todoQuery, item)) {
       // new item meets query criteria, add to list
       this.itemTable.addItem(this.itemTable.count, item);
+
+      // re-execute query to pick up new item reference
+      this.todoQueryService.executeQuery(this.todoQuery.id);
     }
 
-    // re-execute query to pick up new item reference
-    this.todoQueryService.executeQuery(this.todoQuery.id);
+    // broadcast new item addition
+    this.todoListService.fireItemAdded(item);
   }
 
   private getDefaultValues(): TodoItemDialogDataValues {
@@ -107,10 +118,13 @@ export class TodoResultsComponent implements OnInit {
   }
 
   public removeItem(): void {
-    const id = this.itemTable.removeSelected();
+    const item = this.itemTable.removeSelected();
+
+    // broadcast item removal
+    this.todoListService.fireItemRemoved(item);
 
     // update in server
-    this.todoItemsProxy.deleteItem(id).subscribe(() =>
+    this.todoItemsProxy.deleteItem(item.id).subscribe(() =>
       // re-execute query to fix reference positions
       this.todoQueryService.executeQuery(this.todoQuery.id)
     );

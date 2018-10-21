@@ -1,9 +1,9 @@
-import { Component, OnInit, Input, Output, EventEmitter, ViewChild } from '@angular/core';
+import { Component, Output, EventEmitter, ViewChild } from '@angular/core';
 import { TodoListItem } from '../proxies/todo-api-proxies';
 import { DueDateOption, DueDateService } from '../services/due-date.service'
 import { MatDialog, MatDialogConfig, MatTable } from "@angular/material";
 import { TodoItemDialogComponent, TodoItemDialogData, TodoItemDialogDataValues } from '../todo-item-dialog/todo-item-dialog.component';
-import { TodoListService } from "../services/todo-list.service";
+import { ItemEditedEventArgs } from '../services/todo-list.service'
 
 @Component({
   selector: 'app-todo-item-table',
@@ -16,7 +16,6 @@ export class TodoItemTableComponent {
 
   constructor(
     private dueDateService: DueDateService,
-    private todoListService: TodoListService,
     private dialog: MatDialog
   ) { }
 
@@ -24,7 +23,7 @@ export class TodoItemTableComponent {
   @Output() selectedIndexChanged = new EventEmitter<number>();
 
   /** Fires when an item was edited. */
-  @Output() selectedItemEdited = new EventEmitter<TodoListItem>();
+  @Output() selectedItemEdited = new EventEmitter<ItemEditedEventArgs>();
 
   /** Returns the index of the currently selected item. */
   get selectedItemIndex(): number {
@@ -52,8 +51,6 @@ export class TodoItemTableComponent {
     this.viewItems.splice(index, 0, item);
     this.itemTable.renderRows();
     this.changeSelectedIndex(index);
-
-    this.todoListService.fireItemAdded(item);
   }
 
   private adjustInsertionIndex(index: number): number {
@@ -88,7 +85,7 @@ export class TodoItemTableComponent {
   }
 
   /** Deletes the currently selected item. */
-  removeSelected(fromListOnly: boolean = false): number {
+  removeSelected(): TodoListItem {
     if (this.selectedItemIndex >= 0) {
       const removedItems = this.viewItems.splice(this.selectedItemIndex, 1);
       if (this.selectedItemIndex == this.viewItems.length) {
@@ -96,13 +93,10 @@ export class TodoItemTableComponent {
       }
       this.itemTable.renderRows();
 
-      if (!fromListOnly) {
-        this.todoListService.fireItemRemoved(removedItems[0]);
-      }
-      return removedItems[0].id;
+      return removedItems[0];
     }
 
-    return 0;
+    return null;
   }
 
   /** Moves the selected item up or down in the table. */
@@ -133,8 +127,7 @@ export class TodoItemTableComponent {
     const newItem = this.viewItems[this.selectedItemIndex];
     newItem.done = event.checked;
 
-    this.todoListService.fireItemEdited({ oldItem: oldItem, newItem: newItem });
-    this.selectedItemEdited.emit(newItem);
+    this.selectedItemEdited.emit({ oldItem: oldItem, newItem: newItem });
   }
 
   viewGetDueString(date: Date): string {
@@ -164,8 +157,7 @@ export class TodoItemTableComponent {
     newItem.task = values.task;
     newItem.dueDate = values.dueDate;
 
-    this.todoListService.fireItemEdited({ oldItem: oldItem, newItem: newItem });
-    this.selectedItemEdited.emit(newItem);
+    this.selectedItemEdited.emit({ oldItem: oldItem, newItem: newItem });
   }
 
   viewRowSelected(index: number) {
