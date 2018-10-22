@@ -15,11 +15,11 @@ export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
 
 export interface ITodoElementsProxy {
     getAllListElements(): Observable<TodoElement[] | null>;
-    getAllQueryElements(): Observable<TodoElement[] | null>;
+    getAllQueryElements(): Observable<TodoQueryElement[] | null>;
     getListElement(id: number): Observable<TodoElement | null>;
-    updateListElement(id: number, element: TodoElement | null): Observable<TodoElement | null>;
+    updateListElement(id: number, element: TodoElementBase | null): Observable<TodoElement | null>;
     getQueryElement(id: number): Observable<TodoElement | null>;
-    updateQueryElement(id: number, element: TodoElement | null): Observable<TodoElement | null>;
+    updateQueryElement(id: number, element: TodoElementBase | null): Observable<TodoQueryElement | null>;
 }
 
 @Injectable({
@@ -87,7 +87,7 @@ export class TodoElementsProxy implements ITodoElementsProxy {
         return _observableOf<TodoElement[] | null>(<any>null);
     }
 
-    getAllQueryElements(): Observable<TodoElement[] | null> {
+    getAllQueryElements(): Observable<TodoQueryElement[] | null> {
         let url_ = this.baseUrl + "/api/TodoElements/queries";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -106,14 +106,14 @@ export class TodoElementsProxy implements ITodoElementsProxy {
                 try {
                     return this.processGetAllQueryElements(<any>response_);
                 } catch (e) {
-                    return <Observable<TodoElement[] | null>><any>_observableThrow(e);
+                    return <Observable<TodoQueryElement[] | null>><any>_observableThrow(e);
                 }
             } else
-                return <Observable<TodoElement[] | null>><any>_observableThrow(response_);
+                return <Observable<TodoQueryElement[] | null>><any>_observableThrow(response_);
         }));
     }
 
-    protected processGetAllQueryElements(response: HttpResponseBase): Observable<TodoElement[] | null> {
+    protected processGetAllQueryElements(response: HttpResponseBase): Observable<TodoQueryElement[] | null> {
         const status = response.status;
         const responseBlob = 
             response instanceof HttpResponse ? response.body : 
@@ -127,7 +127,7 @@ export class TodoElementsProxy implements ITodoElementsProxy {
             if (resultData200 && resultData200.constructor === Array) {
                 result200 = [];
                 for (let item of resultData200)
-                    result200.push(TodoElement.fromJS(item));
+                    result200.push(TodoQueryElement.fromJS(item));
             }
             return _observableOf(result200);
             }));
@@ -136,7 +136,7 @@ export class TodoElementsProxy implements ITodoElementsProxy {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             }));
         }
-        return _observableOf<TodoElement[] | null>(<any>null);
+        return _observableOf<TodoQueryElement[] | null>(<any>null);
     }
 
     getListElement(id: number): Observable<TodoElement | null> {
@@ -194,7 +194,7 @@ export class TodoElementsProxy implements ITodoElementsProxy {
         return _observableOf<TodoElement | null>(<any>null);
     }
 
-    updateListElement(id: number, element: TodoElement | null): Observable<TodoElement | null> {
+    updateListElement(id: number, element: TodoElementBase | null): Observable<TodoElement | null> {
         let url_ = this.baseUrl + "/api/TodoElements/lists/{id}";
         if (id === undefined || id === null)
             throw new Error("The parameter 'id' must be defined.");
@@ -308,7 +308,7 @@ export class TodoElementsProxy implements ITodoElementsProxy {
         return _observableOf<TodoElement | null>(<any>null);
     }
 
-    updateQueryElement(id: number, element: TodoElement | null): Observable<TodoElement | null> {
+    updateQueryElement(id: number, element: TodoElementBase | null): Observable<TodoQueryElement | null> {
         let url_ = this.baseUrl + "/api/TodoElements/queries/{id}";
         if (id === undefined || id === null)
             throw new Error("The parameter 'id' must be defined.");
@@ -334,14 +334,14 @@ export class TodoElementsProxy implements ITodoElementsProxy {
                 try {
                     return this.processUpdateQueryElement(<any>response_);
                 } catch (e) {
-                    return <Observable<TodoElement | null>><any>_observableThrow(e);
+                    return <Observable<TodoQueryElement | null>><any>_observableThrow(e);
                 }
             } else
-                return <Observable<TodoElement | null>><any>_observableThrow(response_);
+                return <Observable<TodoQueryElement | null>><any>_observableThrow(response_);
         }));
     }
 
-    protected processUpdateQueryElement(response: HttpResponseBase): Observable<TodoElement | null> {
+    protected processUpdateQueryElement(response: HttpResponseBase): Observable<TodoQueryElement | null> {
         const status = response.status;
         const responseBlob = 
             response instanceof HttpResponse ? response.body : 
@@ -352,7 +352,7 @@ export class TodoElementsProxy implements ITodoElementsProxy {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = resultData200 ? TodoElement.fromJS(resultData200) : <any>null;
+            result200 = resultData200 ? TodoQueryElement.fromJS(resultData200) : <any>null;
             return _observableOf(result200);
             }));
         } else if (status === 404) {
@@ -364,7 +364,7 @@ export class TodoElementsProxy implements ITodoElementsProxy {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             }));
         }
-        return _observableOf<TodoElement | null>(<any>null);
+        return _observableOf<TodoQueryElement | null>(<any>null);
     }
 }
 
@@ -1698,6 +1698,108 @@ export interface ITodoElement extends ITodoElementBase {
     childCount: number;
 }
 
+export class TodoQueryElement extends TodoElement implements ITodoQueryElement {
+    query?: TodoQuery | undefined;
+
+    constructor(data?: ITodoQueryElement) {
+        super(data);
+    }
+
+    init(data?: any) {
+        super.init(data);
+        if (data) {
+            this.query = data["query"] ? TodoQuery.fromJS(data["query"]) : <any>undefined;
+        }
+    }
+
+    static fromJS(data: any): TodoQueryElement {
+        data = typeof data === 'object' ? data : {};
+        let result = new TodoQueryElement();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["query"] = this.query ? this.query.toJSON() : <any>undefined;
+        super.toJSON(data);
+        return data; 
+    }
+
+    clone(): TodoQueryElement {
+        const json = this.toJSON();
+        let result = new TodoQueryElement();
+        result.init(json);
+        return result;
+    }
+}
+
+export interface ITodoQueryElement extends ITodoElement {
+    query?: TodoQuery | undefined;
+}
+
+export class TodoQuery extends TodoElementBase implements ITodoQuery {
+    operand!: QueryOperand;
+    operator!: QueryOperator;
+    boolValue!: boolean;
+    dateValue!: Date;
+
+    constructor(data?: ITodoQuery) {
+        super(data);
+    }
+
+    init(data?: any) {
+        super.init(data);
+        if (data) {
+            this.operand = data["operand"];
+            this.operator = data["operator"];
+            this.boolValue = data["boolValue"];
+            this.dateValue = data["dateValue"] ? new Date(data["dateValue"].toString()) : <any>undefined;
+        }
+    }
+
+    static fromJS(data: any): TodoQuery {
+        data = typeof data === 'object' ? data : {};
+        let result = new TodoQuery();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["operand"] = this.operand;
+        data["operator"] = this.operator;
+        data["boolValue"] = this.boolValue;
+        data["dateValue"] = this.dateValue ? this.dateValue.toISOString() : <any>undefined;
+        super.toJSON(data);
+        return data; 
+    }
+
+    clone(): TodoQuery {
+        const json = this.toJSON();
+        let result = new TodoQuery();
+        result.init(json);
+        return result;
+    }
+}
+
+export interface ITodoQuery extends ITodoElementBase {
+    operand: QueryOperand;
+    operator: QueryOperator;
+    boolValue: boolean;
+    dateValue: Date;
+}
+
+export enum QueryOperand {
+    DueDate = 0, 
+    Important = 1, 
+}
+
+export enum QueryOperator {
+    Equals = 0, 
+    NotEquals = 1, 
+}
+
 export class TodoListItem extends EntityBase implements ITodoListItem {
     task?: string | undefined;
     done!: boolean;
@@ -1800,68 +1902,6 @@ export class TodoList extends TodoElementBase implements ITodoList {
 
 export interface ITodoList extends ITodoElementBase {
     items?: TodoListItem[] | undefined;
-}
-
-export class TodoQuery extends TodoElementBase implements ITodoQuery {
-    operand!: QueryOperand;
-    operator!: QueryOperator;
-    boolValue!: boolean;
-    dateValue!: Date;
-
-    constructor(data?: ITodoQuery) {
-        super(data);
-    }
-
-    init(data?: any) {
-        super.init(data);
-        if (data) {
-            this.operand = data["operand"];
-            this.operator = data["operator"];
-            this.boolValue = data["boolValue"];
-            this.dateValue = data["dateValue"] ? new Date(data["dateValue"].toString()) : <any>undefined;
-        }
-    }
-
-    static fromJS(data: any): TodoQuery {
-        data = typeof data === 'object' ? data : {};
-        let result = new TodoQuery();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["operand"] = this.operand;
-        data["operator"] = this.operator;
-        data["boolValue"] = this.boolValue;
-        data["dateValue"] = this.dateValue ? this.dateValue.toISOString() : <any>undefined;
-        super.toJSON(data);
-        return data; 
-    }
-
-    clone(): TodoQuery {
-        const json = this.toJSON();
-        let result = new TodoQuery();
-        result.init(json);
-        return result;
-    }
-}
-
-export interface ITodoQuery extends ITodoElementBase {
-    operand: QueryOperand;
-    operator: QueryOperator;
-    boolValue: boolean;
-    dateValue: Date;
-}
-
-export enum QueryOperand {
-    DueDate = 0, 
-    Important = 1, 
-}
-
-export enum QueryOperator {
-    Equals = 0, 
-    NotEquals = 1, 
 }
 
 export class TodoQueryResults implements ITodoQueryResults {

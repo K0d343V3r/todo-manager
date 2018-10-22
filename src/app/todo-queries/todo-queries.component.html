@@ -1,7 +1,7 @@
 <mat-nav-list dense>
-  <mat-list-item routerLinkActive="active" routerLink="/results/{{myDayQuery.id}}">
-    <a matLine>{{myDayQuery.name}}</a>
-    <span class="child-count" *ngIf="myDayQueryResultCount > 0">{{myDayQueryResultCount}}</span>
+  <mat-list-item routerLinkActive="active" routerLink="/results/{{myDayElement.id}}">
+    <a matLine>{{myDayElement.name}}</a>
+    <span class="child-count" *ngIf="myDayElement.childCount > 0">{{myDayElement.childCount}}</span>
   </mat-list-item>
   <mat-list-item routerLinkActive="active" routerLink="/items/{{myTasksElement.id}}">
     <a matLine>{{myTasksElement.name}}</a>
