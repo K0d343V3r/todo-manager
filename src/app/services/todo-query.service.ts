@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Query } from '@angular/core';
 import { Subject } from 'rxjs';
 import { TodoQueryResults, TodoQuery, TodoQueriesProxy, TodoListItem, QueryOperand, QueryOperator } from '../proxies/todo-api-proxies';
 import { DueDateService } from '../services/due-date.service'
@@ -27,6 +27,12 @@ export class TodoQueryService {
         return this.dueDateService.toEndOfDay(query.dateValue).getTime() == this.dueDateService.toEndOfDay(item.dueDate).getTime();
       } else if (query.operator == QueryOperator.NotEquals) {
         return this.dueDateService.toEndOfDay(query.dateValue).getTime() != this.dueDateService.toEndOfDay(item.dueDate).getTime();
+      }
+    } else if (query.operand == QueryOperand.Important) {
+      if (query.operator == QueryOperator.Equals) {
+        return query.boolValue = item.important;
+      } else if (query.operator == QueryOperator.NotEquals) {
+        return query.boolValue != item.important;
       }
     }
 

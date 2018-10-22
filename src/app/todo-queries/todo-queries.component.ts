@@ -13,10 +13,13 @@ import { DueDateService } from '../services/due-date.service'
 export class TodoQueriesComponent implements OnInit {
   private readonly myDayQueryId: number = 1;
   private readonly myDayQueryName: string = "My Day";
+  private readonly importantQueryId: number = 2;
+  private readonly importantQueryName: string = "Important";
   private readonly myTasksListId: number = 1;
   private readonly myTasksListName: string = "My Tasks";
 
   myDayElement: TodoQueryElement;
+  importantElement: TodoQueryElement;
   myTasksElement: TodoElement;
 
   constructor(
@@ -32,12 +35,12 @@ export class TodoQueriesComponent implements OnInit {
     // attempt to update query to today's date
     const myDayQuery = this.createMyDayQuery();
     this.todoQueriesProxy.updateQuery(this.myDayQueryId, myDayQuery).subscribe(query => {
-      this.initializeMyDayQuery(query);
+      this.onMyDayQueryRetrieved(query);
     }, ex => {
       if (ex.status == 404) {
         // my day query does not exist, create it now
         myDayQuery.id = 0; // ids are auto-generated
-        this.todoQueriesProxy.createQuery(myDayQuery).subscribe(query => this.initializeMyDayQuery(query));
+        this.todoQueriesProxy.createQuery(myDayQuery).subscribe(query => this.onMyDayQueryRetrieved(query));
       }
     });
 
@@ -53,20 +56,27 @@ export class TodoQueriesComponent implements OnInit {
     this.todoQueryService.queryExecuted$.subscribe(results => this.onQueryExecuted(results));
   }
 
-  private onItemEdited(args:  ItemEditedEventArgs) {
-    const wasInResults = this.todoQueryService.inResults(this.myDayElement.query, args.oldItem);
-    const isInResults = this.todoQueryService.inResults(this.myDayElement.query, args.newItem);
+  private onItemEdited(args: ItemEditedEventArgs) {
+    this.checkQueryCountsEdit(this.myDayElement, args);
+    this.checkQueryCountsEdit(this.importantElement, args);
+  }
+
+  private checkQueryCountsEdit(element: TodoQueryElement, args: ItemEditedEventArgs) {
+    const wasInResults = this.todoQueryService.inResults(element.query, args.oldItem);
+    const isInResults = this.todoQueryService.inResults(element.query, args.newItem);
 
     if (wasInResults && !isInResults) {
-      this.myDayElement.childCount--;
+      element.childCount--;
     } else if (!wasInResults && isInResults) {
-      this.myDayElement.childCount++;
+      element.childCount++;
     }
   }
 
   private onQueryExecuted(results: TodoQueryResults) {
     if (results.todoQueryId == this.myDayQueryId) {
       this.myDayElement.childCount = results.references.length;
+    } else if (results.todoQueryId == this.importantQueryId) {
+      this.importantElement.childCount = results.references.length;
     }
   }
 
@@ -79,11 +89,16 @@ export class TodoQueriesComponent implements OnInit {
       }
     }
 
-    const inResults = this.todoQueryService.inResults(this.myDayElement.query, item);
+    this.checkQueryCounts(this.myDayElement, item, add);
+    this.checkQueryCounts(this.importantElement, item, add);
+  }
+
+  private checkQueryCounts(element: TodoQueryElement, item: TodoListItem, add: boolean) {
+    const inResults = this.todoQueryService.inResults(element.query, item);
     if (inResults && add) {
-      this.myDayElement.childCount++;
+      element.childCount++;
     } else if (inResults && !add) {
-      this.myDayElement.childCount--;
+      element.childCount--;
     }
   }
 
@@ -91,20 +106,52 @@ export class TodoQueriesComponent implements OnInit {
     const element = new TodoElement();
     element.id = this.myTasksListId;
     element.name = this.myTasksListName;
-    return element; 
+    return element;
   }
 
-  private initializeMyDayQuery(query: TodoQuery) {
+  private onMyDayQueryRetrieved(query: TodoQuery) {
     // initialize query element
-    this.myDayElement = new TodoQueryElement();
-    this.myDayElement.childCount = 0;   // this will be sorted out once query executes
-    this.myDayElement.id = query.id;
-    this.myDayElement.name = query.name;
-    this.myDayElement.position = query.position;
-    this.myDayElement.query = query;
+    this.myDayElement = this.toQueryElement(query);
+
+    // load important query - this is done after myDay query is created to guarantee correct ids
+    this.todoElementsProxy.getQueryElement(this.importantQueryId).subscribe(element => {
+      this.initializeImportantElement(element);
+    }, ex => {
+      if (ex.status == 404) {
+        // important query does not exist, create it
+        const query = new TodoQuery();
+        query.operand = QueryOperand.Important;
+        query.operator = QueryOperator.Equals;
+        query.boolValue = true;
+        query.name = this.importantQueryName;
+        this.todoQueriesProxy.createQuery(query).subscribe(query => {
+          this.initializeImportantElement(this.toQueryElement(query));
+        });
+      }
+    });
 
     // and route to it
     this.router.navigate([`results/${query.id}`]);
+  }
+
+  private initializeImportantElement(element: TodoQueryElement) {
+    this.importantElement = element;
+
+    // do not show stale counts
+    this.importantElement.childCount = 0;
+
+    // run query to make sure counts are correct
+    this.todoQueryService.executeQuery(element.id);
+  }
+
+  private toQueryElement(query: TodoQuery): TodoQueryElement {
+    var element = new TodoQueryElement();
+    element.childCount = 0;
+    element.id = query.id;
+    element.name = query.name;
+    element.position = query.position;
+    element.query = query;
+    return element;
   }
 
   private createMyDayQuery(): TodoQuery {

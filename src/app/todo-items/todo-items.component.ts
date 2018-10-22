@@ -1,7 +1,7 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { TodoList, TodoListItem, TodoListsProxy, TodoItemsProxy } from '../proxies/todo-api-proxies';
 import { ActivatedRoute, ParamMap } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoItemDialogComponent, TodoItemDialogData, TodoItemDialogDataValues } from '../todo-item-dialog/todo-item-dialog.component';
@@ -13,10 +13,14 @@ import { TodoItemTableComponent } from '../todo-item-table/todo-item-table.compo
   templateUrl: './todo-items.component.html',
   styleUrls: ['./todo-items.component.css']
 })
-export class TodoItemsComponent implements OnInit {
+export class TodoItemsComponent implements OnInit, OnDestroy {
   private todoListId: number;
   private todoList$: Observable<TodoList>;
   @ViewChild(TodoItemTableComponent) private itemTable: TodoItemTableComponent;
+  private todoListSubscription: Subscription;
+  private nameChangedSubscription: Subscription;
+  private itemEditedSubscription: Subscription;
+
   title: string;
 
   constructor(
@@ -32,9 +36,15 @@ export class TodoItemsComponent implements OnInit {
       switchMap((params: ParamMap) => this.todoListsProxy.getList(+params.get('id')))
     );
 
-    this.todoList$.subscribe(list => this.onTodoListChanged(list));
-    this.itemTable.selectedItemEdited.subscribe(args => this.onSelectedItemEdited(args));
-    this.todoListService.listNameChanged$.subscribe(args => this.onListNameChanged(args));
+    this.todoListSubscription = this.todoList$.subscribe(list => this.onTodoListChanged(list));
+    this.itemEditedSubscription = this.itemTable.selectedItemEdited$.subscribe(args => this.onSelectedItemEdited(args));
+    this.nameChangedSubscription = this.todoListService.listNameChanged$.subscribe(args => this.onListNameChanged(args));
+  }
+
+  ngOnDestroy() {
+    this.todoListSubscription.unsubscribe();
+    this.itemEditedSubscription.unsubscribe();
+    this.nameChangedSubscription.unsubscribe();
   }
 
   private onListNameChanged(args: NameChangedEventArgs) {

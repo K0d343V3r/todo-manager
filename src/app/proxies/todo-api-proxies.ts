@@ -18,7 +18,7 @@ export interface ITodoElementsProxy {
     getAllQueryElements(): Observable<TodoQueryElement[] | null>;
     getListElement(id: number): Observable<TodoElement | null>;
     updateListElement(id: number, element: TodoElementBase | null): Observable<TodoElement | null>;
-    getQueryElement(id: number): Observable<TodoElement | null>;
+    getQueryElement(id: number): Observable<TodoQueryElement | null>;
     updateQueryElement(id: number, element: TodoElementBase | null): Observable<TodoQueryElement | null>;
 }
 
@@ -253,7 +253,7 @@ export class TodoElementsProxy implements ITodoElementsProxy {
         return _observableOf<TodoElement | null>(<any>null);
     }
 
-    getQueryElement(id: number): Observable<TodoElement | null> {
+    getQueryElement(id: number): Observable<TodoQueryElement | null> {
         let url_ = this.baseUrl + "/api/TodoElements/queries/{id}";
         if (id === undefined || id === null)
             throw new Error("The parameter 'id' must be defined.");
@@ -275,14 +275,14 @@ export class TodoElementsProxy implements ITodoElementsProxy {
                 try {
                     return this.processGetQueryElement(<any>response_);
                 } catch (e) {
-                    return <Observable<TodoElement | null>><any>_observableThrow(e);
+                    return <Observable<TodoQueryElement | null>><any>_observableThrow(e);
                 }
             } else
-                return <Observable<TodoElement | null>><any>_observableThrow(response_);
+                return <Observable<TodoQueryElement | null>><any>_observableThrow(response_);
         }));
     }
 
-    protected processGetQueryElement(response: HttpResponseBase): Observable<TodoElement | null> {
+    protected processGetQueryElement(response: HttpResponseBase): Observable<TodoQueryElement | null> {
         const status = response.status;
         const responseBlob = 
             response instanceof HttpResponse ? response.body : 
@@ -293,7 +293,7 @@ export class TodoElementsProxy implements ITodoElementsProxy {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = resultData200 ? TodoElement.fromJS(resultData200) : <any>null;
+            result200 = resultData200 ? TodoQueryElement.fromJS(resultData200) : <any>null;
             return _observableOf(result200);
             }));
         } else if (status === 404) {
@@ -305,7 +305,7 @@ export class TodoElementsProxy implements ITodoElementsProxy {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             }));
         }
-        return _observableOf<TodoElement | null>(<any>null);
+        return _observableOf<TodoQueryElement | null>(<any>null);
     }
 
     updateQueryElement(id: number, element: TodoElementBase | null): Observable<TodoQueryElement | null> {

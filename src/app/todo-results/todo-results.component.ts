@@ -1,6 +1,6 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { TodoQuery, TodoQueriesProxy, TodoQueryResults, TodoListItem, QueryOperand, ITodoListItem, TodoItemsProxy, TodoItemReference, TodoReferencesProxy } from '../proxies/todo-api-proxies';
 import { TodoItemTableComponent } from '../todo-item-table/todo-item-table.component';
@@ -14,10 +14,14 @@ import { TodoListService, ItemEditedEventArgs } from "../services/todo-list.serv
   templateUrl: './todo-results.component.html',
   styleUrls: ['./todo-results.component.css']
 })
-export class TodoResultsComponent implements OnInit {
+export class TodoResultsComponent implements OnInit, OnDestroy {
   @ViewChild(TodoItemTableComponent) private itemTable: TodoItemTableComponent;
   private todoQuery: TodoQuery;
   private todoReferences: TodoItemReference[];
+  private todoQuerySubscription: Subscription;
+  private queryExecutedSubscription: Subscription;
+  private itemEditedSubscription: Subscription;
+
   todoQuery$: Observable<TodoQuery>;
   subTitle: string;
 
@@ -35,10 +39,16 @@ export class TodoResultsComponent implements OnInit {
     this.todoQuery$ = this.route.paramMap.pipe(
       switchMap((params: ParamMap) => this.todoQueriesProxy.getQuery(+params.get('id')))
     );
-    this.todoQuery$.subscribe(query => this.onTodoQueryChanged(query));
 
-    this.todoQueryService.queryExecuted$.subscribe(results => this.onQueryExecuted(results));
-    this.itemTable.selectedItemEdited.subscribe(args => this.onSelectedItemEdited(args));
+    this.todoQuerySubscription = this.todoQuery$.subscribe(query => this.onTodoQueryChanged(query));
+    this.queryExecutedSubscription = this.todoQueryService.queryExecuted$.subscribe(results => this.onQueryExecuted(results));
+    this.itemEditedSubscription = this.itemTable.selectedItemEdited$.subscribe(args => this.onSelectedItemEdited(args));
+  }
+
+  ngOnDestroy() {
+    this.todoQuerySubscription.unsubscribe();
+    this.queryExecutedSubscription.unsubscribe();
+    this.itemEditedSubscription.unsubscribe();
   }
 
   private onSelectedItemEdited(args: ItemEditedEventArgs): void {
@@ -116,6 +126,8 @@ export class TodoResultsComponent implements OnInit {
   private getDefaultValues(): TodoItemDialogDataValues {
     if (this.todoQuery.operand == QueryOperand.DueDate) {
       return new TodoItemDialogDataValues("", this.todoQuery.dateValue);
+    } else if (this.todoQuery.operand == QueryOperand.Important) {
+      return new TodoItemDialogDataValues("", null, this.todoQuery.boolValue);
     }
 
     return null;

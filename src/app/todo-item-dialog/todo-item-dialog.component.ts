@@ -9,7 +9,7 @@ export interface DueDateOptions {
 }
 
 export class TodoItemDialogDataValues {
-  constructor(public task: string, public dueDate: Date, public important: boolean = false) { }
+  constructor(public task: string = "", public dueDate: Date = null, public important: boolean = false) { }
 }
 
 export class TodoItemDialogData {
@@ -36,14 +36,14 @@ export class TodoItemDialogComponent {
     private dialogRef: MatDialogRef<TodoItemDialogComponent>,
     @Inject(MAT_DIALOG_DATA) data: TodoItemDialogData) {
     if (data.add) {
-      this.title = "New Todo";
+      this.title = "New Task";
       if (data.values == null) {
-        this.initializeDialog({task: "", dueDate: this.dueDateService.defaultDate, important: false})
+        this.initializeDialog({ task: "", dueDate: this.dueDateService.defaultDate, important: false })
       } else {
         this.initializeDialog(data.values);
       }
     } else {
-      this.title = "Edit Todo";
+      this.title = "Edit Task";
       this.initializeDialog(data.values);
     }
 
@@ -64,7 +64,8 @@ export class TodoItemDialogComponent {
   }
 
   private initializeDialog(values: TodoItemDialogDataValues) {
-    this.selectedDueOption = this.dueDateService.dateToEnum(values.dueDate);
+    this.selectedDueOption = values.dueDate == null ?
+      DueDateOption.None : this.dueDateService.dateToEnum(values.dueDate);
     this.task = values.task;
     if (this.selectedDueOption == DueDateOption.None) {
       this.dueDate = this.dueDateService.toEndOfDay(new Date());

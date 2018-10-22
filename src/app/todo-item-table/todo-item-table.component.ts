@@ -20,10 +20,10 @@ export class TodoItemTableComponent {
   ) { }
 
   /** Fires when the index of the currently selected item changes. */
-  @Output() selectedIndexChanged = new EventEmitter<number>();
+  @Output() selectedIndexChanged$ = new EventEmitter<number>();
 
   /** Fires when an item was edited. */
-  @Output() selectedItemEdited = new EventEmitter<ItemEditedEventArgs>();
+  @Output() selectedItemEdited$ = new EventEmitter<ItemEditedEventArgs>();
 
   /** Returns the index of the currently selected item. */
   get selectedItemIndex(): number {
@@ -127,7 +127,7 @@ export class TodoItemTableComponent {
     const newItem = this.viewItems[this.selectedItemIndex];
     newItem.done = event.checked;
 
-    this.selectedItemEdited.emit({ oldItem: oldItem, newItem: newItem });
+    this.selectedItemEdited$.emit({ oldItem: oldItem, newItem: newItem });
   }
 
   viewGetDueString(date: Date): string {
@@ -140,11 +140,11 @@ export class TodoItemTableComponent {
   }
 
   viewImportantItem(index: number) {
-    const oldItem = this.viewItems[this.selectedItemIndex].clone();
-    const newItem = this.viewItems[this.selectedItemIndex];
+    const oldItem = this.viewItems[index].clone();
+    const newItem = this.viewItems[index];
     newItem.important = !newItem.important;
 
-    this.selectedItemEdited.emit({ oldItem: oldItem, newItem: newItem });
+    this.selectedItemEdited$.emit({ oldItem: oldItem, newItem: newItem });
   }
 
   viewEditItem(index: number): void {
@@ -168,7 +168,7 @@ export class TodoItemTableComponent {
     newItem.dueDate = values.dueDate;
     newItem.important = values.important;
 
-    this.selectedItemEdited.emit({ oldItem: oldItem, newItem: newItem });
+    this.selectedItemEdited$.emit({ oldItem: oldItem, newItem: newItem });
   }
 
   viewRowSelected(index: number) {
@@ -178,7 +178,7 @@ export class TodoItemTableComponent {
   private changeSelectedIndex(index: number) {
     if (this._selectedItemIndex != index) {
       this._selectedItemIndex = index;
-      this.selectedIndexChanged.emit(index);
+      this.selectedIndexChanged$.emit(index);
     }
   }
 }
