@@ -1494,6 +1494,83 @@ export class TodoQueriesProxy implements ITodoQueriesProxy {
     }
 }
 
+export interface ITodoReferencesProxy {
+    moveReference(id: number, reference: TodoItemReference | null): Observable<TodoItemReference | null>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class TodoReferencesProxy implements ITodoReferencesProxy {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ? baseUrl : "https://localhost:44310";
+    }
+
+    moveReference(id: number, reference: TodoItemReference | null): Observable<TodoItemReference | null> {
+        let url_ = this.baseUrl + "/api/TodoReferences/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id)); 
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(reference);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json", 
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processMoveReference(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processMoveReference(<any>response_);
+                } catch (e) {
+                    return <Observable<TodoItemReference | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<TodoItemReference | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processMoveReference(response: HttpResponseBase): Observable<TodoItemReference | null> {
+        const status = response.status;
+        const responseBlob = 
+            response instanceof HttpResponse ? response.body : 
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }};
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = resultData200 ? TodoItemReference.fromJS(resultData200) : <any>null;
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("A server error occurred.", status, _responseText, _headers);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<TodoItemReference | null>(<any>null);
+    }
+}
+
 export class EntityBase implements IEntityBase {
     id!: number;
     position!: number;

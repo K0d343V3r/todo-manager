@@ -100,11 +100,11 @@ export class TodoListsComponent implements OnInit {
     this.todoListsProxy.deleteList(elements[0].id).subscribe();
   }
 
-  editList(index: number): void {
+  editList(): void {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
-    dialogConfig.data = { name: this.todoElements[index].name };
+    dialogConfig.data = { name: this.todoElements[this.selectedElementIndex].name };
 
     const dialogRef = this.dialog.open(TodoListDialogComponent, dialogConfig);
 

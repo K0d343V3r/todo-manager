@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { TodoQuery, TodoQueriesProxy, TodoQueryResults, TodoListItem, QueryOperand, QueryOperator, TodoItemsProxy, TodoItemReference } from '../proxies/todo-api-proxies';
+import { TodoQuery, TodoQueriesProxy, TodoQueryResults, TodoListItem, QueryOperand, ITodoListItem, TodoItemsProxy, TodoItemReference, TodoReferencesProxy } from '../proxies/todo-api-proxies';
 import { TodoItemTableComponent } from '../todo-item-table/todo-item-table.component';
 import { TodoQueryService } from '../services/todo-query.service';
 import { MatDialog, MatDialogConfig } from "@angular/material";
@@ -17,6 +17,7 @@ import { TodoListService, ItemEditedEventArgs } from "../services/todo-list.serv
 export class TodoResultsComponent implements OnInit {
   @ViewChild(TodoItemTableComponent) private itemTable: TodoItemTableComponent;
   private todoQuery: TodoQuery;
+  private todoReferences: TodoItemReference[];
   todoQuery$: Observable<TodoQuery>;
   subTitle: string;
 
@@ -25,6 +26,7 @@ export class TodoResultsComponent implements OnInit {
     private todoQueriesProxy: TodoQueriesProxy,
     private todoQueryService: TodoQueryService,
     private todoItemsProxy: TodoItemsProxy,
+    private todoReferencesProxy: TodoReferencesProxy,
     private todoListService: TodoListService,
     private dialog: MatDialog
   ) { }
@@ -40,9 +42,6 @@ export class TodoResultsComponent implements OnInit {
   }
 
   private onSelectedItemEdited(args: ItemEditedEventArgs): void {
-    // broadcast item update
-    this.todoListService.fireItemEdited(args);
-
     if (this.todoQueryService.inResults(this.todoQuery, args.newItem)) {
       // edited item still meets query criteria, just update item in server
       this.todoItemsProxy.updateItem(args.newItem.id, args.newItem).subscribe();
@@ -56,6 +55,9 @@ export class TodoResultsComponent implements OnInit {
         this.todoQueryService.executeQuery(this.todoQuery.id)
       );
     }
+
+    // broadcast item update
+    this.todoListService.fireItemEdited(args);
   }
 
   private onTodoQueryChanged(query: TodoQuery) {
@@ -70,6 +72,7 @@ export class TodoResultsComponent implements OnInit {
 
   private onQueryExecuted(results: TodoQueryResults) {
     if (results.todoQueryId == this.todoQuery.id) {
+      this.todoReferences = results.references;
       const items = results.references.map(r => r.item);
       this.itemTable.addItems(items);
     }
@@ -118,6 +121,7 @@ export class TodoResultsComponent implements OnInit {
   }
 
   public removeItem(): void {
+    // remove from list
     const item = this.itemTable.removeSelected();
 
     // broadcast item removal
@@ -128,5 +132,18 @@ export class TodoResultsComponent implements OnInit {
       // re-execute query to fix reference positions
       this.todoQueryService.executeQuery(this.todoQuery.id)
     );
+  }
+
+  private move(up: boolean) {
+    const oldPosition = this.itemTable.selectedItemIndex;
+    const newPosition = this.itemTable.moveSelected(up);
+
+    // rearrange in reference list
+    const movedReferences = this.todoReferences.splice(oldPosition, 1);
+    this.todoReferences.splice(newPosition, 0, movedReferences[0]);
+
+    // update server with new position
+    movedReferences[0].position = newPosition;
+    this.todoReferencesProxy.moveReference(movedReferences[0].id, movedReferences[0]).subscribe();
   }
 }

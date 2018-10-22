@@ -2,9 +2,6 @@
   <mat-list-item *ngFor="let element of todoElements; let i = index" routerLinkActive="active" routerLink="/items/{{element.id}}">
     <a matLine>{{element.name}}</a>
     <span class="child-count" *ngIf="element.childCount > 0">{{element.childCount}}</span>
-    <button mat-icon-button (click)="editList(i)">
-      <mat-icon>edit</mat-icon>
-    </button>
   </mat-list-item>
 </mat-nav-list>
 <mat-toolbar color="primary">
@@ -13,6 +10,9 @@
   </button>
   <button mat-icon-button [disabled]="selectedElementIndex < 0" (click)="removeList()">
     <mat-icon>remove</mat-icon>
+  </button>
+  <button mat-icon-button [disabled]="selectedElementIndex < 0" (click)="editList()">
+    <mat-icon>edit</mat-icon>
   </button>
   <button mat-icon-button [disabled]="selectedElementIndex <= 0" (click)="move(true)">
     <mat-icon>arrow_upward</mat-icon>
