@@ -95,6 +95,7 @@ export class TodoResultsComponent implements OnInit {
     item.todoListId = 1;
     item.task = values.task;
     item.dueDate = values.dueDate;
+    item.important = values.important;
     item.position = -1;   // this will append to default list
     this.todoItemsProxy.createItem(item).subscribe(item => this.onItemCreated(item));
   }
