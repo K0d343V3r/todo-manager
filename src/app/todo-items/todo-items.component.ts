@@ -65,6 +65,7 @@ export class TodoItemsComponent implements OnInit {
     item.todoListId = this.todoListId;
     item.task = values.task;
     item.dueDate = values.dueDate;
+    item.important = values.important;
     item.position = this.itemTable.count;
     this.todoItemsProxy.createItem(item).subscribe(item => this.onItemCreated(item));
   }

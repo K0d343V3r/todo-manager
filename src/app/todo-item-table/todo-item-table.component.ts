@@ -120,7 +120,7 @@ export class TodoItemTableComponent {
   /** View Api */
 
   viewItems: TodoListItem[] = [];
-  viewColumns: string[] = ['done', 'task', 'dueDate', 'edit'];
+  viewColumns: string[] = ['done', 'task', 'dueDate', 'important', 'edit'];
 
   viewItemChecked(event): void {
     const oldItem = this.viewItems[this.selectedItemIndex].clone();
@@ -139,11 +139,21 @@ export class TodoItemTableComponent {
     }
   }
 
+  viewImportantItem(index: number) {
+    const oldItem = this.viewItems[this.selectedItemIndex].clone();
+    const newItem = this.viewItems[this.selectedItemIndex];
+    newItem.important = !newItem.important;
+
+    this.selectedItemEdited.emit({ oldItem: oldItem, newItem: newItem });
+  }
+
   viewEditItem(index: number): void {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
-    const values = new TodoItemDialogDataValues(this.viewItems[index].task, this.viewItems[index].dueDate);
+    const values = new TodoItemDialogDataValues(
+      this.viewItems[index].task, this.viewItems[index].dueDate, this.viewItems[index].important
+    );
     dialogConfig.data = new TodoItemDialogData(false, values);
 
     const dialogRef = this.dialog.open(TodoItemDialogComponent, dialogConfig);
@@ -156,6 +166,7 @@ export class TodoItemTableComponent {
     const newItem = this.viewItems[this.selectedItemIndex];
     newItem.task = values.task;
     newItem.dueDate = values.dueDate;
+    newItem.important = values.important;
 
     this.selectedItemEdited.emit({ oldItem: oldItem, newItem: newItem });
   }

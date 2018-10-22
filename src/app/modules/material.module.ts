@@ -1,5 +1,4 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 import {
   MatSidenavModule,
@@ -14,6 +13,7 @@ import {
   MatSelectModule,
   MatDatepickerModule,
   MatNativeDateModule,
+  MatSlideToggleModule,
   MatToolbarModule
 } from '@angular/material';
 
@@ -31,6 +31,7 @@ import {
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatSlideToggleModule,
     MatListModule
   ],
   exports: [
@@ -46,6 +47,7 @@ import {
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatSlideToggleModule,
     MatListModule
   ],
 })

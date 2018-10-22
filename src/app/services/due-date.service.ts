@@ -16,6 +16,10 @@ export class DueDateService {
 
   constructor() { }
 
+  get defaultDate(): Date {
+    return this._defaultDate;
+  }
+
   enumToDate(option: DueDateOption, customDate: Date): Date {
     if (option == DueDateOption.Custom) {
       return this.toEndOfDay(customDate);

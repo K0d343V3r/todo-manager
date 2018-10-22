@@ -9,7 +9,7 @@ export interface DueDateOptions {
 }
 
 export class TodoItemDialogDataValues {
-  constructor(public task: string, public dueDate: Date) { }
+  constructor(public task: string, public dueDate: Date, public important: boolean = false) { }
 }
 
 export class TodoItemDialogData {
@@ -28,6 +28,7 @@ export class TodoItemDialogComponent {
   dueDateOptions: DueDateOptions[];
   selectedDueOption: DueDateOption;
   dueDate: Date;
+  important: boolean;
 
   constructor(
     private dueDateService: DueDateService,
@@ -37,8 +38,7 @@ export class TodoItemDialogComponent {
     if (data.add) {
       this.title = "New Todo";
       if (data.values == null) {
-        this.selectedDueOption = DueDateOption.None;
-        this.dueDate = new Date();
+        this.initializeDialog({task: "", dueDate: this.dueDateService.defaultDate, important: false})
       } else {
         this.initializeDialog(data.values);
       }
@@ -50,7 +50,8 @@ export class TodoItemDialogComponent {
     this.form1 = fb.group({
       task: [this.task, []],
       due: [this.selectedDueOption, []],
-      dueDate: [this.dueDate, []]
+      dueDate: [this.dueDate, []],
+      important: [this.important, []]
     });
 
     this.dueDateOptions = [
@@ -65,12 +66,17 @@ export class TodoItemDialogComponent {
   private initializeDialog(values: TodoItemDialogDataValues) {
     this.selectedDueOption = this.dueDateService.dateToEnum(values.dueDate);
     this.task = values.task;
-    this.dueDate = values.dueDate;
+    if (this.selectedDueOption == DueDateOption.None) {
+      this.dueDate = this.dueDateService.toEndOfDay(new Date());
+    } else {
+      this.dueDate = values.dueDate;
+    }
+    this.important = values.important;
   }
 
   save() {
     const date = this.dueDateService.enumToDate(this.form1.value.due, this.form1.value.dueDate);
-    this.dialogRef.close(new TodoItemDialogDataValues(this.form1.value.task, date));
+    this.dialogRef.close(new TodoItemDialogDataValues(this.form1.value.task, date, this.form1.value.important));
   }
 
   cancel() {

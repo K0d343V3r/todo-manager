@@ -1702,6 +1702,7 @@ export class TodoListItem extends EntityBase implements ITodoListItem {
     task?: string | undefined;
     done!: boolean;
     dueDate!: Date;
+    important!: boolean;
     todoListId!: number;
 
     constructor(data?: ITodoListItem) {
@@ -1714,6 +1715,7 @@ export class TodoListItem extends EntityBase implements ITodoListItem {
             this.task = data["task"];
             this.done = data["done"];
             this.dueDate = data["dueDate"] ? new Date(data["dueDate"].toString()) : <any>undefined;
+            this.important = data["important"];
             this.todoListId = data["todoListId"];
         }
     }
@@ -1730,6 +1732,7 @@ export class TodoListItem extends EntityBase implements ITodoListItem {
         data["task"] = this.task;
         data["done"] = this.done;
         data["dueDate"] = this.dueDate ? this.dueDate.toISOString() : <any>undefined;
+        data["important"] = this.important;
         data["todoListId"] = this.todoListId;
         super.toJSON(data);
         return data; 
@@ -1747,6 +1750,7 @@ export interface ITodoListItem extends IEntityBase {
     task?: string | undefined;
     done: boolean;
     dueDate: Date;
+    important: boolean;
     todoListId: number;
 }
 
