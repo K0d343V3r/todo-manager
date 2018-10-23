@@ -1,6 +1,6 @@
-import { Injectable, Query } from '@angular/core';
-import { Subject } from 'rxjs';
-import { TodoQueryResults, TodoQuery, TodoQueriesProxy, TodoListItem, QueryOperand, QueryOperator } from '../proxies/todo-api-proxies';
+import { Injectable } from '@angular/core';
+import { Subject, Observable } from 'rxjs';
+import { TodoQueryResults, TodoQuery, TodoQueriesProxy, TodoListItem, QueryOperand, QueryOperator, TodoItemReference } from '../proxies/todo-api-proxies';
 import { DueDateService } from '../services/due-date.service'
 
 @Injectable({
@@ -19,6 +19,10 @@ export class TodoQueryService {
     this.todoQueriesProxy.executeQuery(queryId).subscribe(results => {
       this.queryExecutedSource.next(results);
     })
+  }
+
+  executeQueryNoBroadcast(queryId: number): Observable<TodoQueryResults> {
+    return this.todoQueriesProxy.executeQuery(queryId);
   }
 
   inResults(query: TodoQuery, item: TodoListItem): boolean {

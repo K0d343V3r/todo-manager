@@ -41,8 +41,8 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
     );
 
     this.todoQuerySubscription = this.todoQuery$.subscribe(query => this.onTodoQueryChanged(query));
-    this.queryExecutedSubscription = this.todoQueryService.queryExecuted$.subscribe(results => this.onQueryExecuted(results));
     this.itemEditedSubscription = this.itemTable.selectedItemEdited$.subscribe(args => this.onSelectedItemEdited(args));
+    this.queryExecutedSubscription = this.todoQueryService.queryExecuted$.subscribe(results => this.onQueryExecuted(results));
   }
 
   ngOnDestroy() {
@@ -62,7 +62,9 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
       // and update server
       this.todoItemsProxy.updateItem(args.newItem.id, args.newItem).subscribe(() =>
         // re-execute query to make server match client state
-        this.todoQueryService.executeQuery(this.todoQuery.id)
+        this.todoQueryService.executeQueryNoBroadcast(this.todoQuery.id).subscribe(results => {
+          this.todoReferences = results.references;
+        })
       );
     }
 
@@ -71,12 +73,17 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
   }
 
   private onTodoQueryChanged(query: TodoQuery) {
+    // initialize query
     this.todoQuery = query;
+
+    // initialize subtitle
     if (query.operand == QueryOperand.DueDate) {
       this.subTitle = query.dateValue.toDateString();
+    } else {
+      this.subTitle = "";
     }
 
-    // execute query
+    // execute query to load item table
     this.todoQueryService.executeQuery(query.id);
   }
 
@@ -116,7 +123,9 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
       this.itemTable.addItem(this.itemTable.count, item);
 
       // re-execute query to pick up new item reference
-      this.todoQueryService.executeQuery(this.todoQuery.id);
+      this.todoQueryService.executeQueryNoBroadcast(this.todoQuery.id).subscribe(results => {
+        this.todoReferences = results.references;
+      });
     }
 
     // broadcast new item addition
@@ -143,7 +152,9 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
     // update in server
     this.todoItemsProxy.deleteItem(item.id).subscribe(() =>
       // re-execute query to fix reference positions
-      this.todoQueryService.executeQuery(this.todoQuery.id)
+      this.todoQueryService.executeQueryNoBroadcast(this.todoQuery.id).subscribe(results => {
+        this.todoReferences = results.references;
+      })
     );
   }
 

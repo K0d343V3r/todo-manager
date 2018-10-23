@@ -144,6 +144,9 @@ export class TodoItemTableComponent {
     const newItem = this.viewItems[index];
     newItem.important = !newItem.important;
 
+    // technically click event has not happened for row yet... do it now
+    this.changeSelectedIndex(index);
+    
     this.selectedItemEdited$.emit({ oldItem: oldItem, newItem: newItem });
   }
 

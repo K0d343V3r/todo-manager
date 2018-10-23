@@ -29,7 +29,12 @@ export class TodoQueriesComponent implements OnInit {
     private todoQueryService: TodoQueryService,
     private dueDateService: DueDateService,
     private router: Router
-  ) { }
+  ) { 
+    this.myDayElement = new TodoQueryElement();
+    this.myDayElement.id = this.myDayQueryId;
+    this.importantElement = new TodoQueryElement();
+    this.importantElement.id = this.importantQueryId;
+  }
 
   ngOnInit() {
     // attempt to update query to today's date
@@ -111,11 +116,11 @@ export class TodoQueriesComponent implements OnInit {
 
   private onMyDayQueryRetrieved(query: TodoQuery) {
     // initialize query element
-    this.myDayElement = this.toQueryElement(query);
+    this.updateQueryElement(this.myDayElement, query);
 
-    // load important query - this is done after myDay query is created to guarantee correct ids
+    // load important query - this is done after myDay query to guarantee id of 2
     this.todoElementsProxy.getQueryElement(this.importantQueryId).subscribe(element => {
-      this.initializeImportantElement(element);
+      this.initializeImportantElement(element.query);
     }, ex => {
       if (ex.status == 404) {
         // important query does not exist, create it
@@ -125,7 +130,7 @@ export class TodoQueriesComponent implements OnInit {
         query.boolValue = true;
         query.name = this.importantQueryName;
         this.todoQueriesProxy.createQuery(query).subscribe(query => {
-          this.initializeImportantElement(this.toQueryElement(query));
+          this.initializeImportantElement(query);
         });
       }
     });
@@ -134,24 +139,21 @@ export class TodoQueriesComponent implements OnInit {
     this.router.navigate([`results/${query.id}`]);
   }
 
-  private initializeImportantElement(element: TodoQueryElement) {
-    this.importantElement = element;
+  private initializeImportantElement(query: TodoQuery) {
+    this.updateQueryElement(this.importantElement, query);
 
-    // do not show stale counts
+    // do not show stale counts - wait for query execution
     this.importantElement.childCount = 0;
 
     // run query to make sure counts are correct
-    this.todoQueryService.executeQuery(element.id);
+    this.todoQueryService.executeQuery(query.id);
   }
 
-  private toQueryElement(query: TodoQuery): TodoQueryElement {
-    var element = new TodoQueryElement();
-    element.childCount = 0;
+  private updateQueryElement(element: TodoQueryElement, query: TodoQuery) {
     element.id = query.id;
     element.name = query.name;
     element.position = query.position;
     element.query = query;
-    return element;
   }
 
   private createMyDayQuery(): TodoQuery {
