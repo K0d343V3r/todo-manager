@@ -141,8 +141,10 @@ export class TodoQueriesComponent implements OnInit {
   private refreshQueries() {
     // execute queries directly or via routing to results component
     if (this.router.url == "/") {
-      // we are at home, route to my day query
+      // we are at home, routing to results component will refresh query
       this.router.navigate([`results/${this.myDayElement.id}`]);
+      this.importantElement.childCount = 0;
+      this.todoQueryService.executeQuery(this.importantElement.id);
     } else {
       const parts: string[] = this.router.url.split("/");
       if (parts[1] != this.urlSection || +parts[2] == this.myDayElement.id) {

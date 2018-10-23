@@ -1,6 +1,6 @@
 <mat-toolbar color="primary">
   <mat-toolbar-row>
-    <span>{{(todoQuery$ | async).name}}</span>
+    <span *ngIf="todoQuery$ | async as query">{{query.name}}</span>
   </mat-toolbar-row>
   <mat-toolbar-row>
     <span class="subtitle">{{subTitle}}</span>
