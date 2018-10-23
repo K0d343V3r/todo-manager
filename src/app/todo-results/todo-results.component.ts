@@ -37,7 +37,10 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.todoQuery$ = this.route.paramMap.pipe(
-      switchMap((params: ParamMap) => this.todoQueriesProxy.getQuery(+params.get('id')))
+      switchMap((params: ParamMap) =>
+        this.todoQueriesProxy.getQuery(+params.get('id')
+        )
+      )
     );
 
     this.todoQuerySubscription = this.todoQuery$.subscribe(query => this.onTodoQueryChanged(query));
