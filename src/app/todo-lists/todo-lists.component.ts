@@ -3,7 +3,7 @@ import { TodoElement, TodoElementsProxy, TodoList, TodoListItem, TodoListsProxy 
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoListDialogComponent, TodoListDialogData } from '../todo-list-dialog/todo-list-dialog.component';
 import { Router, NavigationEnd } from "@angular/router";
-import { TodoListService, NameChangedEventArgs } from "../services/todo-list.service";
+import { TodoListService, NameChangedEventArgs, ItemEditedEventArgs } from "../services/todo-list.service";
 import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -29,6 +29,7 @@ export class TodoListsComponent implements OnInit {
     this.todoElementsProxy.getAllListElements().subscribe(elements => this.todoElements = elements);
     this.todoListService.itemAdded$.subscribe(item => this.onListItemsChanged(item, true));
     this.todoListService.itemRemoved$.subscribe(item => this.onListItemsChanged(item, false));
+    this.todoListService.itemEdited$.subscribe(args => this.onItemEdited(args));
     this.navigationEnd$ = this.router.events.pipe(filter(evt => evt instanceof NavigationEnd)) as Observable<NavigationEnd>;
     this.navigationEnd$.subscribe(event => this.onUrlChanged(event.url));
   }
@@ -45,12 +46,26 @@ export class TodoListsComponent implements OnInit {
   }
 
   private onListItemsChanged(item: TodoListItem, add: boolean) {
-    const index = this.todoElements.findIndex(entry => entry.id == item.todoListId);
+    if (!item.done) {
+      // we only track remaining tasks (not done)
+      const index = this.todoElements.findIndex(entry => entry.id == item.todoListId);
+      if (index >= 0) {
+        if (add) {
+          this.todoElements[index].remainingCount++;
+        } else {
+          this.todoElements[index].remainingCount--;
+        }
+      }
+    }
+  }
+
+  private onItemEdited(args: ItemEditedEventArgs) {
+    const index = this.todoElements.findIndex(entry => entry.id == args.newItem.todoListId);
     if (index >= 0) {
-      if (add) {
-        this.todoElements[index].childCount++;
-      } else {
-        this.todoElements[index].childCount--;
+      if (args.oldItem.done && !args.newItem.done) {
+        this.todoElements[index].remainingCount++;
+      } else if (!args.oldItem.done && args.newItem.done) {
+        this.todoElements[index].remainingCount--;
       }
     }
   }
@@ -74,7 +89,7 @@ export class TodoListsComponent implements OnInit {
   }
 
   private onListCreated(list: TodoList): void {
-    const element = new TodoElement({ id: list.id, name: list.name, position: list.position, childCount: list.items.length });
+    const element = new TodoElement({ id: list.id, name: list.name, position: list.position, remainingCount: 0 });
     this.todoElements.push(element);
 
     // select the newly created item, and route to it

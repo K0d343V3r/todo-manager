@@ -17,9 +17,9 @@ export interface ITodoElementsProxy {
     getAllListElements(): Observable<TodoElement[] | null>;
     getAllQueryElements(): Observable<TodoQueryElement[] | null>;
     getListElement(id: number): Observable<TodoElement | null>;
-    updateListElement(id: number, element: TodoElementBase | null): Observable<TodoElement | null>;
+    updateListElement(id: number, element: TodoElement | null): Observable<TodoElement | null>;
     getQueryElement(id: number): Observable<TodoQueryElement | null>;
-    updateQueryElement(id: number, element: TodoElementBase | null): Observable<TodoQueryElement | null>;
+    updateQueryElement(id: number, element: TodoQueryElement | null): Observable<TodoQueryElement | null>;
 }
 
 @Injectable({
@@ -194,7 +194,7 @@ export class TodoElementsProxy implements ITodoElementsProxy {
         return _observableOf<TodoElement | null>(<any>null);
     }
 
-    updateListElement(id: number, element: TodoElementBase | null): Observable<TodoElement | null> {
+    updateListElement(id: number, element: TodoElement | null): Observable<TodoElement | null> {
         let url_ = this.baseUrl + "/api/TodoElements/lists/{id}";
         if (id === undefined || id === null)
             throw new Error("The parameter 'id' must be defined.");
@@ -308,7 +308,7 @@ export class TodoElementsProxy implements ITodoElementsProxy {
         return _observableOf<TodoQueryElement | null>(<any>null);
     }
 
-    updateQueryElement(id: number, element: TodoElementBase | null): Observable<TodoQueryElement | null> {
+    updateQueryElement(id: number, element: TodoQueryElement | null): Observable<TodoQueryElement | null> {
         let url_ = this.baseUrl + "/api/TodoElements/queries/{id}";
         if (id === undefined || id === null)
             throw new Error("The parameter 'id' must be defined.");
@@ -1659,7 +1659,7 @@ export interface ITodoElementBase extends IEntityBase {
 }
 
 export class TodoElement extends TodoElementBase implements ITodoElement {
-    childCount!: number;
+    remainingCount!: number;
 
     constructor(data?: ITodoElement) {
         super(data);
@@ -1668,7 +1668,7 @@ export class TodoElement extends TodoElementBase implements ITodoElement {
     init(data?: any) {
         super.init(data);
         if (data) {
-            this.childCount = data["childCount"];
+            this.remainingCount = data["remainingCount"];
         }
     }
 
@@ -1681,7 +1681,7 @@ export class TodoElement extends TodoElementBase implements ITodoElement {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["childCount"] = this.childCount;
+        data["remainingCount"] = this.remainingCount;
         super.toJSON(data);
         return data; 
     }
@@ -1695,7 +1695,7 @@ export class TodoElement extends TodoElementBase implements ITodoElement {
 }
 
 export interface ITodoElement extends ITodoElementBase {
-    childCount: number;
+    remainingCount: number;
 }
 
 export class TodoQueryElement extends TodoElement implements ITodoQueryElement {

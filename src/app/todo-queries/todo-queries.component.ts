@@ -4,7 +4,7 @@ import { Router } from "@angular/router";
 import { TodoListService, ItemEditedEventArgs } from "../services/todo-list.service";
 import { TodoQueryService } from '../services/todo-query.service';
 import { DueDateService } from '../services/due-date.service'
-import { Observable, forkJoin } from 'rxjs';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-todo-queries',
@@ -17,7 +17,6 @@ export class TodoQueriesComponent implements OnInit {
 
   myTasksElement: TodoElement;
   queryElements: TodoQueryElement[] = [];
-
 
   constructor(
     private todoElementsProxy: TodoElementsProxy,
@@ -60,28 +59,11 @@ export class TodoQueriesComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.todoElementsProxy.getAllQueryElements().subscribe(elements => {
-      if (elements.length == 0) {
-        // no queries yet, create them (no need to refresh)
-        this.createQueries(0);
-      } else if (this.updatableElements.length == 0) {
-        // no queries to update, just refresh them
-        this.refreshQueries();
-      } else {
-        // update queries (refreshes when updates complete)
-        this.updateQueries();
-      }
-      if (this.router.url == "/") {
-        // we are at Home, route to routing query
-        this.router.navigate([`results/${this.routingQueryId}`]);
-      }
-    });
+    // initialize all queries
+    this.initializeQueryElements();
 
-    // update default list name
-    this.todoElementsProxy.updateListElement(this.myTasksElement.id, this.myTasksElement).subscribe(
-      // initialize child counts
-      element => this.myTasksElement.childCount = element.childCount
-    );
+    // initialize my tasks list
+    this.initializeMyTasksElement();
 
     this.todoListService.itemAdded$.subscribe(item => this.onListItemsChanged(item, true));
     this.todoListService.itemRemoved$.subscribe(item => this.onListItemsChanged(item, false));
@@ -89,8 +71,12 @@ export class TodoQueriesComponent implements OnInit {
     this.todoQueryService.queryExecuted$.subscribe(results => this.onQueryExecuted(results));
   }
 
-  private get routingQueryId(): number {
-    return this.queryElements[0].query.id;
+  private initializeMyTasksElement() {
+    // update default list name
+    this.todoElementsProxy.updateListElement(this.myTasksElement.id, this.myTasksElement).subscribe(
+      // we only need to update remaining counts
+      element => this.myTasksElement.remainingCount = element.remainingCount
+    );
   }
 
   private createQueries(index: number) {
@@ -100,20 +86,52 @@ export class TodoQueriesComponent implements OnInit {
     this.todoQueriesProxy.createQuery(query).subscribe(() => {
       if (index < this.queryElements.length - 1) {
         this.createQueries(index + 1)
+      } else {
+        // all queries created, we can now route to default query
+        this.routeToDefaultQuery();
       }
     });
   }
 
-  private updateQueries() {
-    const requests = this.updatableElements.map(e =>
-      this.todoQueriesProxy.updateQuery(e.query.id, e.query)
-    );
+  private initializeQueryElements() {
+    // update queries first
+    const requests = this.updatableElements.map(e => this.todoQueriesProxy.updateQuery(e.query.id, e.query));
+    forkJoin(requests).subscribe(() => {
+      // queries exist, get their updated remaining counts
+      this.updateQueryCounts();
 
-    // refresh queries only when all elements are updated
-    forkJoin(requests).subscribe(() => this.refreshQueries());
+      // and route to default query
+      this.routeToDefaultQuery();
+    }, ex => {
+      if (ex.status == 404) {
+        // queries do not exist, create them
+        this.createQueries(0);
+      }
+    });
+  }
+
+  private updateQueryCounts() {
+    this.todoElementsProxy.getAllQueryElements().subscribe(elements => {
+      this.queryElements.forEach((e, i) => e.remainingCount = elements[i].remainingCount);
+    });
+  }
+
+  private routeToDefaultQuery() {
+    // route to first query only if we are at Home
+    if (this.router.url == "/") {
+      this.router.navigate([`results/${this.queryElements[0].query.id}`]);
+    }
   }
 
   private onItemEdited(args: ItemEditedEventArgs) {
+    if (args.newItem.todoListId == this.myTasksElement.id) {
+      if (args.oldItem.done && !args.newItem.done) {
+        this.myTasksElement.remainingCount++;
+      } else if (!args.oldItem.done && args.newItem.done) {
+        this.myTasksElement.remainingCount--;
+      }
+    }
+
     this.queryElements.forEach(element => this.checkQueryCountsEdit(element, args));
   }
 
@@ -121,10 +139,20 @@ export class TodoQueriesComponent implements OnInit {
     const wasInResults = this.todoQueryService.inResults(element.query, args.oldItem);
     const isInResults = this.todoQueryService.inResults(element.query, args.newItem);
 
-    if (wasInResults && !isInResults) {
-      element.childCount--;
+    if (wasInResults && isInResults) {
+      if (args.oldItem.done && !args.newItem.done) {
+        element.remainingCount++;
+      } else if (!args.oldItem.done && args.newItem.done) {
+        element.remainingCount--;
+      }
     } else if (!wasInResults && isInResults) {
-      element.childCount++;
+      if (!args.newItem.done) {
+        element.remainingCount++;
+      }
+    } else if (wasInResults && !isInResults) {
+      if (!args.oldItem.done) {
+        element.remainingCount--;
+      }
     }
   }
 
@@ -132,16 +160,17 @@ export class TodoQueriesComponent implements OnInit {
     const element = this.queryElements.find(e => e.id == results.todoQueryId);
     if (element != null) {
       // this query executed, get the latest result count
-      element.childCount = results.references.length;
+      element.remainingCount = results.references.filter(r => !r.item.done).length;
     }
   }
 
   private onListItemsChanged(item: TodoListItem, add: boolean) {
-    if (item.todoListId == this.myTasksElement.id) {
+    if (!item.done && item.todoListId == this.myTasksElement.id) {
+      // we only track remaining tasks (not done)
       if (add) {
-        this.myTasksElement.childCount++;
+        this.myTasksElement.remainingCount++;
       } else {
-        this.myTasksElement.childCount--;
+        this.myTasksElement.remainingCount--;
       }
     }
 
@@ -149,32 +178,14 @@ export class TodoQueriesComponent implements OnInit {
   }
 
   private checkQueryCounts(element: TodoQueryElement, item: TodoListItem, add: boolean) {
-    const inResults = this.todoQueryService.inResults(element.query, item);
-    if (inResults && add) {
-      element.childCount++;
-    } else if (inResults && !add) {
-      element.childCount--;
-    }
-  }
-
-  private refreshQueries() {
-    let routedToQueryId = 0;
-    if (this.router.url == "/") {
-      // at Home, routing will take care of refresh
-      routedToQueryId = this.routingQueryId;
-    } else {
-      const parts: string[] = this.router.url.split("/");
-      if (parts[1] == this.urlSection) {
-        // we are routing to a query (not list)
-        routedToQueryId = +parts[2];
+    if (!item.done) {
+      // we only track remaining tasks (not done)
+      const inResults = this.todoQueryService.inResults(element.query, item);
+      if (inResults && add) {
+        element.remainingCount++;
+      } else if (inResults && !add) {
+        element.remainingCount--;
       }
     }
-
-    // do not execute a query if we are routing to it
-    this.queryElements.forEach((e, i) => {
-      if (e.query.id != routedToQueryId) {
-        this.todoQueryService.executeQuery(e.query.id);
-      }
-    });
   }
 }
