@@ -1,7 +1,9 @@
 <mat-nav-list dense>
   <mat-list-item *ngFor="let element of todoElements; let i = index" routerLinkActive="active" routerLink="/items/{{element.id}}">
-    <a matLine>{{element.name}}</a>
-    <span class="child-count" *ngIf="element.remainingCount > 0">{{element.remainingCount}}</span>
+    <mat-icon matListIcon class="list-entry-icon">list</mat-icon>
+    <a>{{element.name}}</a>
+    <span class="fill-remaining-space"></span>
+    <span class="list-entry-count" *ngIf="element.remainingCount > 0">{{element.remainingCount}}</span>
   </mat-list-item>
 </mat-nav-list>
 <mat-toolbar color="primary">
@@ -17,7 +19,8 @@
   <button mat-icon-button [disabled]="selectedElementIndex <= 0" (click)="move(true)">
     <mat-icon>arrow_upward</mat-icon>
   </button>
-  <button mat-icon-button [disabled]="selectedElementIndex < 0 || selectedElementIndex == todoElements.length - 1" (click)="move(false)">
+  <button mat-icon-button [disabled]="selectedElementIndex < 0 || selectedElementIndex == todoElements.length - 1"
+    (click)="move(false)">
     <mat-icon>arrow_downward</mat-icon>
   </button>
 </mat-toolbar>

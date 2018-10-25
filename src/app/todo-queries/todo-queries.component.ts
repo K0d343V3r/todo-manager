@@ -12,11 +12,11 @@ import { forkJoin } from 'rxjs';
   styleUrls: ['./todo-queries.component.css']
 })
 export class TodoQueriesComponent implements OnInit {
-  private readonly urlSection = "results";
   private updatableElements: TodoQueryElement[] = [];
 
   myTasksElement: TodoElement;
   queryElements: TodoQueryElement[] = [];
+  queryElementIcons: string[] = [];
 
   constructor(
     private todoElementsProxy: TodoElementsProxy,
@@ -38,6 +38,7 @@ export class TodoQueriesComponent implements OnInit {
     element.query.operator = QueryOperator.Equals;
     element.query.dateValue = dueDateService.toEndOfDay(new Date());
     this.queryElements.push(element);
+    this.queryElementIcons.push("wb_sunny");
     this.updatableElements.push(element);
 
     // followed by important query
@@ -52,10 +53,11 @@ export class TodoQueriesComponent implements OnInit {
     element.query.operator = QueryOperator.Equals;
     element.query.boolValue = true;
     this.queryElements.push(element);
+    this.queryElementIcons.push("star_border");
 
     this.myTasksElement = new TodoElement();
     this.myTasksElement.id = 1;
-    this.myTasksElement.name = "My Tasks";
+    this.myTasksElement.name = "All Tasks";
   }
 
   ngOnInit() {
