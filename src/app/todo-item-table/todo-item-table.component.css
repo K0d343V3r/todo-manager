@@ -21,3 +21,7 @@ th:nth-child(4) {
 th:nth-child(5) {
   width: 1px;
 }
+
+.strike {
+  text-decoration: line-through;
+}
