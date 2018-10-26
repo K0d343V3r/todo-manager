@@ -1798,6 +1798,8 @@ export enum QueryOperand {
 export enum QueryOperator {
     Equals = 0, 
     NotEquals = 1, 
+    GreaterThan = 2, 
+    LessThan = 3, 
 }
 
 export class TodoListItem extends EntityBase implements ITodoListItem {

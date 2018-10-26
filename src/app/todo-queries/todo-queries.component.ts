@@ -26,6 +26,8 @@ export class TodoQueriesComponent implements OnInit {
     private dueDateService: DueDateService,
     private router: Router
   ) {
+    const today = dueDateService.toEndOfDay(new Date());
+
     // my day query is first
     let element = new TodoQueryElement();
     element.id = this.queryElements.length + 1;
@@ -36,7 +38,7 @@ export class TodoQueriesComponent implements OnInit {
     element.query.name = element.name;
     element.query.operand = QueryOperand.DueDate;
     element.query.operator = QueryOperator.Equals;
-    element.query.dateValue = dueDateService.toEndOfDay(new Date());
+    element.query.dateValue = today;
     this.queryElements.push(element);
     this.queryElementIcons.push("wb_sunny");
     this.updatableElements.push(element);
@@ -55,9 +57,24 @@ export class TodoQueriesComponent implements OnInit {
     this.queryElements.push(element);
     this.queryElementIcons.push("star_border");
 
+    // followed by planned query
+    element = new TodoQueryElement();
+    element.id = this.queryElements.length + 1;
+    element.name = "Planned";
+    element.position = this.queryElements.length;
+    element.query = new TodoQuery();
+    element.query.id = element.id;
+    element.query.name = element.name;
+    element.query.operand = QueryOperand.DueDate;
+    element.query.operator = QueryOperator.GreaterThan;
+    element.query.dateValue = today;
+    this.queryElements.push(element);
+    this.queryElementIcons.push("calendar_today");
+    this.updatableElements.push(element);
+
     this.myTasksElement = new TodoElement();
     this.myTasksElement.id = 1;
-    this.myTasksElement.name = "All Tasks";
+    this.myTasksElement.name = "My Tasks";
   }
 
   ngOnInit() {

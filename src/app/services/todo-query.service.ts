@@ -31,6 +31,10 @@ export class TodoQueryService {
         return this.dueDateService.toEndOfDay(query.dateValue).getTime() == this.dueDateService.toEndOfDay(item.dueDate).getTime();
       } else if (query.operator == QueryOperator.NotEquals) {
         return this.dueDateService.toEndOfDay(query.dateValue).getTime() != this.dueDateService.toEndOfDay(item.dueDate).getTime();
+      } else if (query.operator == QueryOperator.GreaterThan) {
+        return this.dueDateService.toEndOfDay(item.dueDate).getTime() > this.dueDateService.toEndOfDay(query.dateValue).getTime();
+      } else if (query.operator == QueryOperator.LessThan) {
+        return this.dueDateService.toEndOfDay(item.dueDate).getTime() < this.dueDateService.toEndOfDay(query.dateValue).getTime();
       }
     } else if (query.operand == QueryOperand.Important) {
       if (query.operator == QueryOperator.Equals) {

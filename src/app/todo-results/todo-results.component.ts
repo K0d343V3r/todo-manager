@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { Observable, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { TodoQuery, TodoQueriesProxy, TodoQueryResults, TodoListItem, QueryOperand, ITodoListItem, TodoItemsProxy, TodoItemReference, TodoReferencesProxy } from '../proxies/todo-api-proxies';
+import { TodoQuery, TodoQueriesProxy, TodoQueryResults, TodoListItem, QueryOperand, ITodoListItem, TodoItemsProxy, TodoItemReference, TodoReferencesProxy, QueryOperator } from '../proxies/todo-api-proxies';
 import { TodoItemTableComponent } from '../todo-item-table/todo-item-table.component';
 import { TodoQueryService } from '../services/todo-query.service';
 import { MatDialog, MatDialogConfig } from "@angular/material";
@@ -80,7 +80,7 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
     this.todoQuery = query;
 
     // initialize subtitle
-    if (query.operand == QueryOperand.DueDate) {
+    if (query.operand == QueryOperand.DueDate && query.operator == QueryOperator.Equals) {
       this.subTitle = query.dateValue.toDateString();
     } else {
       this.subTitle = "";
@@ -137,7 +137,13 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
 
   private getDefaultValues(): TodoItemDialogDataValues {
     if (this.todoQuery.operand == QueryOperand.DueDate) {
-      return new TodoItemDialogDataValues("", this.todoQuery.dateValue);
+      if (this.todoQuery.operator == QueryOperator.Equals) {
+        return new TodoItemDialogDataValues("", this.todoQuery.dateValue);
+      } else if (this.todoQuery.operator == QueryOperator.GreaterThan) {
+        const dayAfter = new Date(this.todoQuery.dateValue);
+        dayAfter.setDate(dayAfter.getDate() + 1);
+        return new TodoItemDialogDataValues("", dayAfter); 
+      }
     } else if (this.todoQuery.operand == QueryOperand.Important) {
       return new TodoItemDialogDataValues("", null, this.todoQuery.boolValue);
     }
