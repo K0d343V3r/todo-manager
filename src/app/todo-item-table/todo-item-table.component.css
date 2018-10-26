@@ -25,3 +25,8 @@ th:nth-child(5) {
 .strike {
   text-decoration: line-through;
 }
+
+.past-due {
+  font-weight: bold;
+  color: #880E4F;
+}

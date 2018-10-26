@@ -20,6 +20,42 @@ export class DueDateService {
     return this._defaultDate;
   }
 
+  getToday(): Date {
+    return this.toEndOfDay(new Date());
+  }
+
+  isToday(date: Date): boolean {
+    return this.toEndOfDay(date).getTime() === this.getToday().getTime();
+  }
+
+  isBeforeToday(date: Date): boolean {
+    if (date === this.defaultDate) {
+      return false;
+    }
+
+    return this.toEndOfDay(date).getTime() < this.getToday().getTime();
+  }
+
+  isAfterToday(date: Date): boolean {
+    if (date === this.defaultDate) {
+      return false;
+    }
+
+    return this.toEndOfDay(date).getTime() > this.getToday().getTime();
+  }
+
+  isSameDay(date1: Date, date2: Date): boolean {
+    return this.toEndOfDay(date1).getTime() === this.toEndOfDay(date2).getTime();
+  }
+
+  isEarlierDay(earlier: Date, later: Date): boolean {
+    if (earlier === this.defaultDate || later === this.defaultDate) {
+      return false;
+    }
+
+    return this.toEndOfDay(earlier).getTime() < this.toEndOfDay(later).getTime();
+  }
+
   enumToDate(option: DueDateOption, customDate: Date): Date {
     if (option == DueDateOption.Custom) {
       return this.toEndOfDay(customDate);
@@ -51,19 +87,18 @@ export class DueDateService {
         return this._defaultDate;
 
       case DueDateOption.Today:
-        const today = new Date();
-        return this.toEndOfDay(today);
+        return this.getToday();
 
       case DueDateOption.Tomorrow:
-        const tomorrow = new Date();
+        const tomorrow = this.getToday();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        return this.toEndOfDay(tomorrow);
+        return tomorrow;
 
       case DueDateOption.NextWeek:
         // end of next week (next Sunday)
-        const nextWeek = new Date();
+        const nextWeek = this.getToday();
         nextWeek.setDate(nextWeek.getDate() + (7 - nextWeek.getDay()) + 7);
-        return this.toEndOfDay(nextWeek);
+        return nextWeek;
 
       default:
         throw "Invalid option.";
@@ -89,7 +124,7 @@ export class DueDateService {
         return "Next week";
 
       case DueDateOption.Custom:
-        return customDate == null ? "On this date" : customDate.toDateString();
+        return customDate == null ? "On this day" : customDate.toDateString();
     }
   }
 }

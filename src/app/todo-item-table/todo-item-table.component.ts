@@ -122,6 +122,10 @@ export class TodoItemTableComponent {
   viewItems: TodoListItem[] = [];
   viewColumns: string[] = ['done', 'task', 'dueDate', 'important', 'edit'];
 
+  viewIsPastDue(item: TodoListItem): boolean {
+    return !item.done && this.dueDateService.isBeforeToday(item.dueDate);
+  }
+
   viewItemChecked(event): void {
     const oldItem = this.viewItems[this.selectedItemIndex].clone();
     const newItem = this.viewItems[this.selectedItemIndex];
@@ -146,7 +150,7 @@ export class TodoItemTableComponent {
 
     // technically click event has not happened for row yet... do it now
     this.changeSelectedIndex(index);
-    
+
     this.selectedItemEdited$.emit({ oldItem: oldItem, newItem: newItem });
   }
 
