@@ -1742,7 +1742,8 @@ export class TodoQuery extends TodoElementBase implements ITodoQuery {
     operand!: QueryOperand;
     operator!: QueryOperator;
     boolValue!: boolean;
-    dateValue!: Date;
+    absoluteDateValue!: Date;
+    relativeDateValue!: number;
 
     constructor(data?: ITodoQuery) {
         super(data);
@@ -1754,7 +1755,8 @@ export class TodoQuery extends TodoElementBase implements ITodoQuery {
             this.operand = data["operand"];
             this.operator = data["operator"];
             this.boolValue = data["boolValue"];
-            this.dateValue = data["dateValue"] ? new Date(data["dateValue"].toString()) : <any>undefined;
+            this.absoluteDateValue = data["absoluteDateValue"] ? new Date(data["absoluteDateValue"].toString()) : <any>undefined;
+            this.relativeDateValue = data["relativeDateValue"];
         }
     }
 
@@ -1770,7 +1772,8 @@ export class TodoQuery extends TodoElementBase implements ITodoQuery {
         data["operand"] = this.operand;
         data["operator"] = this.operator;
         data["boolValue"] = this.boolValue;
-        data["dateValue"] = this.dateValue ? this.dateValue.toISOString() : <any>undefined;
+        data["absoluteDateValue"] = this.absoluteDateValue ? this.absoluteDateValue.toISOString() : <any>undefined;
+        data["relativeDateValue"] = this.relativeDateValue;
         super.toJSON(data);
         return data; 
     }
@@ -1787,7 +1790,8 @@ export interface ITodoQuery extends ITodoElementBase {
     operand: QueryOperand;
     operator: QueryOperator;
     boolValue: boolean;
-    dateValue: Date;
+    absoluteDateValue: Date;
+    relativeDateValue: number;
 }
 
 export enum QueryOperand {
@@ -1799,7 +1803,9 @@ export enum QueryOperator {
     Equals = 0, 
     NotEquals = 1, 
     GreaterThan = 2, 
-    LessThan = 3, 
+    GreaterThanOrEquals = 3, 
+    LessThan = 4, 
+    LessThanOrEquals = 5, 
 }
 
 export class TodoListItem extends EntityBase implements ITodoListItem {

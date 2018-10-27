@@ -8,6 +8,7 @@ import { TodoQueryService } from '../services/todo-query.service';
 import { MatDialog, MatDialogConfig } from "@angular/material";
 import { TodoItemDialogComponent, TodoItemDialogData, TodoItemDialogDataValues } from '../todo-item-dialog/todo-item-dialog.component';
 import { TodoListService, ItemEditedEventArgs } from "../services/todo-list.service";
+import { DueDateService } from '../services/due-date.service'
 
 @Component({
   selector: 'app-todo-results',
@@ -32,6 +33,7 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
     private todoItemsProxy: TodoItemsProxy,
     private todoReferencesProxy: TodoReferencesProxy,
     private todoListService: TodoListService,
+    private dueDateService: DueDateService,
     private dialog: MatDialog
   ) { }
 
@@ -80,8 +82,8 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
     this.todoQuery = query;
 
     // initialize subtitle
-    if (query.operand == QueryOperand.DueDate && query.operator == QueryOperator.Equals) {
-      this.subTitle = query.dateValue.toDateString();
+    if (query.operand == QueryOperand.DueDate) {
+      this.subTitle = this.dueDateService.getToday().toDateString();
     } else {
       this.subTitle = "";
     }
@@ -137,12 +139,17 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
 
   private getDefaultValues(): TodoItemDialogDataValues {
     if (this.todoQuery.operand == QueryOperand.DueDate) {
-      if (this.todoQuery.operator == QueryOperator.Equals) {
-        return new TodoItemDialogDataValues("", this.todoQuery.dateValue);
+      const date = this.todoQueryService.resolveDateValue(this.todoQuery);
+      if (this.todoQuery.operator == QueryOperator.Equals ||
+        this.todoQuery.operator == QueryOperator.GreaterThanOrEquals ||
+        this.todoQuery.operator == QueryOperator.LessThanOrEquals) {
+        return new TodoItemDialogDataValues("", date);
       } else if (this.todoQuery.operator == QueryOperator.GreaterThan) {
-        const dayAfter = new Date(this.todoQuery.dateValue);
-        dayAfter.setDate(dayAfter.getDate() + 1);
-        return new TodoItemDialogDataValues("", dayAfter); 
+        const dayAfter = this.dueDateService.getFromDay(date, 1);
+        return new TodoItemDialogDataValues("", dayAfter);
+      } else if (this.todoQuery.operator == QueryOperator.LessThan) {
+        const dayBefore = this.dueDateService.getFromDay(date, -1);
+        return new TodoItemDialogDataValues("", dayBefore);
       }
     } else if (this.todoQuery.operand == QueryOperand.Important) {
       return new TodoItemDialogDataValues("", null, this.todoQuery.boolValue);

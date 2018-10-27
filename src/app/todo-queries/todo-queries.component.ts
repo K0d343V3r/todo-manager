@@ -4,7 +4,6 @@ import { Router } from "@angular/router";
 import { TodoListService, ItemEditedEventArgs } from "../services/todo-list.service";
 import { TodoQueryService } from '../services/todo-query.service';
 import { DueDateService } from '../services/due-date.service'
-import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-todo-queries',
@@ -12,8 +11,6 @@ import { forkJoin } from 'rxjs';
   styleUrls: ['./todo-queries.component.css']
 })
 export class TodoQueriesComponent implements OnInit {
-  private updatableElements: TodoQueryElement[] = [];
-
   myTasksElement: TodoElement;
   queryElements: TodoQueryElement[] = [];
   queryElementIcons: string[] = [];
@@ -26,8 +23,6 @@ export class TodoQueriesComponent implements OnInit {
     private dueDateService: DueDateService,
     private router: Router
   ) {
-    const today = dueDateService.toEndOfDay(new Date());
-
     // my day query is first
     let element = new TodoQueryElement();
     element.id = this.queryElements.length + 1;
@@ -36,12 +31,13 @@ export class TodoQueriesComponent implements OnInit {
     element.query = new TodoQuery();
     element.query.id = element.id;
     element.query.name = element.name;
+    element.query.position = -1;            // append
     element.query.operand = QueryOperand.DueDate;
-    element.query.operator = QueryOperator.Equals;
-    element.query.dateValue = today;
+    element.query.operator = QueryOperator.LessThanOrEquals;
+    element.query.absoluteDateValue = dueDateService.defaultDate;
+    element.query.relativeDateValue = 0;    // items due today or earlier
     this.queryElements.push(element);
     this.queryElementIcons.push("wb_sunny");
-    this.updatableElements.push(element);
 
     // followed by important query
     element = new TodoQueryElement();
@@ -51,6 +47,7 @@ export class TodoQueriesComponent implements OnInit {
     element.query = new TodoQuery();
     element.query.id = element.id;
     element.query.name = element.name;
+    element.query.position = -1;            // append
     element.query.operand = QueryOperand.Important;
     element.query.operator = QueryOperator.Equals;
     element.query.boolValue = true;
@@ -65,12 +62,13 @@ export class TodoQueriesComponent implements OnInit {
     element.query = new TodoQuery();
     element.query.id = element.id;
     element.query.name = element.name;
+    element.query.position = -1;            // append
     element.query.operand = QueryOperand.DueDate;
     element.query.operator = QueryOperator.GreaterThan;
-    element.query.dateValue = today;
+    element.query.absoluteDateValue = dueDateService.defaultDate;
+    element.query.relativeDateValue = 0;    // items due later than today
     this.queryElements.push(element);
     this.queryElementIcons.push("calendar_today");
-    this.updatableElements.push(element);
 
     this.myTasksElement = new TodoElement();
     this.myTasksElement.id = 1;
@@ -90,12 +88,19 @@ export class TodoQueriesComponent implements OnInit {
     this.todoQueryService.queryExecuted$.subscribe(results => this.onQueryExecuted(results));
   }
 
-  private initializeMyTasksElement() {
-    // update default list name
-    this.todoElementsProxy.updateListElement(this.myTasksElement.id, this.myTasksElement).subscribe(
-      // we only need to update remaining counts
-      element => this.myTasksElement.remainingCount = element.remainingCount
-    );
+  private initializeQueryElements() {
+    this.todoElementsProxy.getAllQueryElements().subscribe(elements => {
+      if (elements.length == 0) {
+        // queries do not exist yet, create them
+        this.createQueries(0);
+      } else {
+        // update remaining counts
+        this.queryElements.forEach((e, i) => e.remainingCount = elements[i].remainingCount);
+
+        // and route to default query
+        this.routeToDefaultQuery();
+      }
+    });
   }
 
   private createQueries(index: number) {
@@ -112,34 +117,19 @@ export class TodoQueriesComponent implements OnInit {
     });
   }
 
-  private initializeQueryElements() {
-    // update queries first
-    const requests = this.updatableElements.map(e => this.todoQueriesProxy.updateQuery(e.query.id, e.query));
-    forkJoin(requests).subscribe(() => {
-      // queries exist, get their updated remaining counts
-      this.updateQueryCounts();
-
-      // and route to default query
-      this.routeToDefaultQuery();
-    }, ex => {
-      if (ex.status == 404) {
-        // queries do not exist, create them
-        this.createQueries(0);
-      }
-    });
-  }
-
-  private updateQueryCounts() {
-    this.todoElementsProxy.getAllQueryElements().subscribe(elements => {
-      this.queryElements.forEach((e, i) => e.remainingCount = elements[i].remainingCount);
-    });
-  }
-
   private routeToDefaultQuery() {
     // route to first query only if we are at Home
     if (this.router.url == "/") {
       this.router.navigate([`results/${this.queryElements[0].query.id}`]);
     }
+  }
+
+  private initializeMyTasksElement() {
+    // update default list name
+    this.todoElementsProxy.updateListElement(this.myTasksElement.id, this.myTasksElement).subscribe(
+      // we only need to update remaining counts
+      element => this.myTasksElement.remainingCount = element.remainingCount
+    );
   }
 
   private onItemEdited(args: ItemEditedEventArgs) {

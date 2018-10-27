@@ -68,7 +68,7 @@ export class TodoItemDialogComponent {
       DueDateOption.None : this.dueDateService.dateToEnum(values.dueDate);
     this.task = values.task;
     if (this.selectedDueOption == DueDateOption.None) {
-      this.dueDate = this.dueDateService.toEndOfDay(new Date());
+      this.dueDate = this.dueDateService.getToday();
     } else {
       this.dueDate = values.dueDate;
     }
