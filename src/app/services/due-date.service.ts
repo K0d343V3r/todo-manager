@@ -12,12 +12,10 @@ export enum DueDateOption {
   providedIn: 'root'
 })
 export class DueDateService {
-  private _defaultDate: Date = new Date('0001-01-01T00:00:00Z');
-
   constructor() { }
 
   get defaultDate(): Date {
-    return this._defaultDate;
+    return null;
   }
 
   getToday(dateOnly: boolean = false): Date {
@@ -25,27 +23,31 @@ export class DueDateService {
   }
 
   isDefaultDate(date: Date): boolean {
-    return this._defaultDate.getTime() === date.getTime();
+    return date == null;
   }
 
   isToday(date: Date): boolean {
-    return this.toDateOnly(date).getTime() === this.getToday(true).getTime();
+    if (this.isDefaultDate(date)) {
+      return false;
+    } else {
+      return this.toDateOnly(date).getTime() === this.getToday(true).getTime();
+    }
   }
 
   isBeforeToday(date: Date): boolean {
     if (this.isDefaultDate(date)) {
       return false;
+    } else {
+      return this.toDateOnly(date).getTime() < this.getToday(true).getTime();
     }
-
-    return this.toDateOnly(date).getTime() < this.getToday(true).getTime();
   }
 
   isAfterToday(date: Date): boolean {
     if (this.isDefaultDate(date)) {
       return false;
+    } else {
+      return this.toDateOnly(date).getTime() > this.getToday(true).getTime();
     }
-
-    return this.toDateOnly(date).getTime() > this.getToday(true).getTime();
   }
 
   getFromToday(offset: number): Date {
@@ -55,29 +57,37 @@ export class DueDateService {
   }
 
   getFromDay(date: Date, offset: number): Date {
-    const date2 = new Date(date);
-    date2.setDate(date2.getDate() + offset);
-    return date2;
+    if (this.isDefaultDate(date)) {
+      throw "Invalid date: null.";
+    } else {
+      const date2 = new Date(date);
+      date2.setDate(date2.getDate() + offset);
+      return date2;
+    }
   }
 
   isSameDay(date1: Date, date2: Date): boolean {
-    return this.toDateOnly(date1).getTime() === this.toDateOnly(date2).getTime();
+    if (this.isDefaultDate(date1) || this.isDefaultDate(date2)) {
+      return this.isDefaultDate(date1) === this.isDefaultDate(date2);
+    } else {
+      return this.toDateOnly(date1).getTime() === this.toDateOnly(date2).getTime();
+    }
   }
 
   isEarlierDay(date: Date, later: Date): boolean {
     if (this.isDefaultDate(date) || this.isDefaultDate(later)) {
       return false;
+    } else {
+      return this.toDateOnly(date).getTime() < this.toDateOnly(later).getTime();
     }
-
-    return this.toDateOnly(date).getTime() < this.toDateOnly(later).getTime();
   }
 
   isLaterDay(date: Date, earlier: Date): boolean {
     if (this.isDefaultDate(date) || this.isDefaultDate(earlier)) {
       return false;
+    } else {
+      return this.toDateOnly(date).getTime() > this.toDateOnly(earlier).getTime();
     }
-
-    return this.toDateOnly(date).getTime() > this.toDateOnly(earlier).getTime();
   }
 
   enumToDate(option: DueDateOption, customDate: Date): Date {
@@ -105,7 +115,7 @@ export class DueDateService {
   private toDate(option: DueDateOption) {
     switch (option) {
       case DueDateOption.None:
-        return this._defaultDate;
+        return this.defaultDate;
 
       case DueDateOption.Today:
         return this.getToday();

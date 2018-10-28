@@ -55,7 +55,7 @@ export class TodoQueryService {
   }
 
   resolveDateValue(query: TodoQuery): Date {
-    if (!this.dueDateService.isDefaultDate(query.absoluteDateValue)) {
+    if (query.relativeDateValue == null) {
       return query.absoluteDateValue;
     } else {
       return this.dueDateService.getFromToday(query.relativeDateValue);
