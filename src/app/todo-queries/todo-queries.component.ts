@@ -27,11 +27,9 @@ export class TodoQueriesComponent implements OnInit {
     let element = new TodoQueryElement();
     element.id = this.queryElements.length + 1;
     element.name = "My Day";
-    element.position = this.queryElements.length;
     element.query = new TodoQuery();
     element.query.id = element.id;
     element.query.name = element.name;
-    element.query.position = -1;            // append
     element.query.operand = QueryOperand.DueDate;
     element.query.operator = QueryOperator.LessThanOrEquals;
     element.query.absoluteDateValue = dueDateService.defaultDate;
@@ -43,11 +41,9 @@ export class TodoQueriesComponent implements OnInit {
     element = new TodoQueryElement();
     element.id = this.queryElements.length + 1;
     element.name = "Important";
-    element.position = this.queryElements.length;
     element.query = new TodoQuery();
     element.query.id = element.id;
     element.query.name = element.name;
-    element.query.position = -1;            // append
     element.query.operand = QueryOperand.Important;
     element.query.operator = QueryOperator.Equals;
     element.query.boolValue = true;
@@ -58,11 +54,9 @@ export class TodoQueriesComponent implements OnInit {
     element = new TodoQueryElement();
     element.id = this.queryElements.length + 1;
     element.name = "Planned";
-    element.position = this.queryElements.length;
     element.query = new TodoQuery();
     element.query.id = element.id;
     element.query.name = element.name;
-    element.query.position = -1;            // append
     element.query.operand = QueryOperand.DueDate;
     element.query.operator = QueryOperator.GreaterThan;
     element.query.absoluteDateValue = dueDateService.defaultDate;

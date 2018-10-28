@@ -1571,9 +1571,8 @@ export class TodoReferencesProxy implements ITodoReferencesProxy {
     }
 }
 
-export class EntityBase implements IEntityBase {
+export abstract class EntityBase implements IEntityBase {
     id!: number;
-    position!: number;
 
     constructor(data?: IEntityBase) {
         if (data) {
@@ -1587,38 +1586,30 @@ export class EntityBase implements IEntityBase {
     init(data?: any) {
         if (data) {
             this.id = data["id"];
-            this.position = data["position"];
         }
     }
 
     static fromJS(data: any): EntityBase {
         data = typeof data === 'object' ? data : {};
-        let result = new EntityBase();
-        result.init(data);
-        return result;
+        throw new Error("The abstract class 'EntityBase' cannot be instantiated.");
     }
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
-        data["position"] = this.position;
         return data; 
     }
 
     clone(): EntityBase {
-        const json = this.toJSON();
-        let result = new EntityBase();
-        result.init(json);
-        return result;
+        throw new Error("The abstract class 'EntityBase' cannot be instantiated.");
     }
 }
 
 export interface IEntityBase {
     id: number;
-    position: number;
 }
 
-export class TodoElementBase extends EntityBase implements ITodoElementBase {
+export abstract class TodoElementBase extends EntityBase implements ITodoElementBase {
     name?: string | undefined;
 
     constructor(data?: ITodoElementBase) {
@@ -1634,9 +1625,7 @@ export class TodoElementBase extends EntityBase implements ITodoElementBase {
 
     static fromJS(data: any): TodoElementBase {
         data = typeof data === 'object' ? data : {};
-        let result = new TodoElementBase();
-        result.init(data);
-        return result;
+        throw new Error("The abstract class 'TodoElementBase' cannot be instantiated.");
     }
 
     toJSON(data?: any) {
@@ -1647,10 +1636,7 @@ export class TodoElementBase extends EntityBase implements ITodoElementBase {
     }
 
     clone(): TodoElementBase {
-        const json = this.toJSON();
-        let result = new TodoElementBase();
-        result.init(json);
-        return result;
+        throw new Error("The abstract class 'TodoElementBase' cannot be instantiated.");
     }
 }
 
@@ -1658,8 +1644,43 @@ export interface ITodoElementBase extends IEntityBase {
     name?: string | undefined;
 }
 
-export class TodoElement extends TodoElementBase implements ITodoElement {
+export abstract class TodoBrowsingElement extends TodoElementBase implements ITodoBrowsingElement {
     remainingCount!: number;
+
+    constructor(data?: ITodoBrowsingElement) {
+        super(data);
+    }
+
+    init(data?: any) {
+        super.init(data);
+        if (data) {
+            this.remainingCount = data["remainingCount"];
+        }
+    }
+
+    static fromJS(data: any): TodoBrowsingElement {
+        data = typeof data === 'object' ? data : {};
+        throw new Error("The abstract class 'TodoBrowsingElement' cannot be instantiated.");
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["remainingCount"] = this.remainingCount;
+        super.toJSON(data);
+        return data; 
+    }
+
+    clone(): TodoBrowsingElement {
+        throw new Error("The abstract class 'TodoBrowsingElement' cannot be instantiated.");
+    }
+}
+
+export interface ITodoBrowsingElement extends ITodoElementBase {
+    remainingCount: number;
+}
+
+export class TodoElement extends TodoBrowsingElement implements ITodoElement {
+    position!: number;
 
     constructor(data?: ITodoElement) {
         super(data);
@@ -1668,7 +1689,7 @@ export class TodoElement extends TodoElementBase implements ITodoElement {
     init(data?: any) {
         super.init(data);
         if (data) {
-            this.remainingCount = data["remainingCount"];
+            this.position = data["position"];
         }
     }
 
@@ -1681,7 +1702,7 @@ export class TodoElement extends TodoElementBase implements ITodoElement {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["remainingCount"] = this.remainingCount;
+        data["position"] = this.position;
         super.toJSON(data);
         return data; 
     }
@@ -1694,11 +1715,11 @@ export class TodoElement extends TodoElementBase implements ITodoElement {
     }
 }
 
-export interface ITodoElement extends ITodoElementBase {
-    remainingCount: number;
+export interface ITodoElement extends ITodoBrowsingElement {
+    position: number;
 }
 
-export class TodoQueryElement extends TodoElement implements ITodoQueryElement {
+export class TodoQueryElement extends TodoBrowsingElement implements ITodoQueryElement {
     query?: TodoQuery | undefined;
 
     constructor(data?: ITodoQueryElement) {
@@ -1734,7 +1755,7 @@ export class TodoQueryElement extends TodoElement implements ITodoQueryElement {
     }
 }
 
-export interface ITodoQueryElement extends ITodoElement {
+export interface ITodoQueryElement extends ITodoBrowsingElement {
     query?: TodoQuery | undefined;
 }
 
@@ -1742,8 +1763,8 @@ export class TodoQuery extends TodoElementBase implements ITodoQuery {
     operand!: QueryOperand;
     operator!: QueryOperator;
     boolValue!: boolean;
-    absoluteDateValue!: Date;
-    relativeDateValue!: number;
+    absoluteDateValue?: Date | undefined;
+    relativeDateValue?: number | undefined;
 
     constructor(data?: ITodoQuery) {
         super(data);
@@ -1790,8 +1811,8 @@ export interface ITodoQuery extends ITodoElementBase {
     operand: QueryOperand;
     operator: QueryOperator;
     boolValue: boolean;
-    absoluteDateValue: Date;
-    relativeDateValue: number;
+    absoluteDateValue?: Date | undefined;
+    relativeDateValue?: number | undefined;
 }
 
 export enum QueryOperand {
@@ -1809,9 +1830,10 @@ export enum QueryOperator {
 }
 
 export class TodoListItem extends EntityBase implements ITodoListItem {
+    position!: number;
     task?: string | undefined;
     done!: boolean;
-    dueDate!: Date;
+    dueDate?: Date | undefined;
     important!: boolean;
     todoListId!: number;
 
@@ -1822,6 +1844,7 @@ export class TodoListItem extends EntityBase implements ITodoListItem {
     init(data?: any) {
         super.init(data);
         if (data) {
+            this.position = data["position"];
             this.task = data["task"];
             this.done = data["done"];
             this.dueDate = data["dueDate"] ? new Date(data["dueDate"].toString()) : <any>undefined;
@@ -1839,6 +1862,7 @@ export class TodoListItem extends EntityBase implements ITodoListItem {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
+        data["position"] = this.position;
         data["task"] = this.task;
         data["done"] = this.done;
         data["dueDate"] = this.dueDate ? this.dueDate.toISOString() : <any>undefined;
@@ -1857,14 +1881,16 @@ export class TodoListItem extends EntityBase implements ITodoListItem {
 }
 
 export interface ITodoListItem extends IEntityBase {
+    position: number;
     task?: string | undefined;
     done: boolean;
-    dueDate: Date;
+    dueDate?: Date | undefined;
     important: boolean;
     todoListId: number;
 }
 
 export class TodoList extends TodoElementBase implements ITodoList {
+    position!: number;
     items?: TodoListItem[] | undefined;
 
     constructor(data?: ITodoList) {
@@ -1874,6 +1900,7 @@ export class TodoList extends TodoElementBase implements ITodoList {
     init(data?: any) {
         super.init(data);
         if (data) {
+            this.position = data["position"];
             if (data["items"] && data["items"].constructor === Array) {
                 this.items = [];
                 for (let item of data["items"])
@@ -1891,6 +1918,7 @@ export class TodoList extends TodoElementBase implements ITodoList {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
+        data["position"] = this.position;
         if (this.items && this.items.constructor === Array) {
             data["items"] = [];
             for (let item of this.items)
@@ -1909,6 +1937,7 @@ export class TodoList extends TodoElementBase implements ITodoList {
 }
 
 export interface ITodoList extends ITodoElementBase {
+    position: number;
     items?: TodoListItem[] | undefined;
 }
 
@@ -1968,6 +1997,7 @@ export interface ITodoQueryResults {
 }
 
 export class TodoItemReference extends EntityBase implements ITodoItemReference {
+    position!: number;
     item?: TodoListItem | undefined;
     todoQueryId!: number;
 
@@ -1978,6 +2008,7 @@ export class TodoItemReference extends EntityBase implements ITodoItemReference 
     init(data?: any) {
         super.init(data);
         if (data) {
+            this.position = data["position"];
             this.item = data["item"] ? TodoListItem.fromJS(data["item"]) : <any>undefined;
             this.todoQueryId = data["todoQueryId"];
         }
@@ -1992,6 +2023,7 @@ export class TodoItemReference extends EntityBase implements ITodoItemReference 
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
+        data["position"] = this.position;
         data["item"] = this.item ? this.item.toJSON() : <any>undefined;
         data["todoQueryId"] = this.todoQueryId;
         super.toJSON(data);
@@ -2007,6 +2039,7 @@ export class TodoItemReference extends EntityBase implements ITodoItemReference 
 }
 
 export interface ITodoItemReference extends IEntityBase {
+    position: number;
     item?: TodoListItem | undefined;
     todoQueryId: number;
 }
