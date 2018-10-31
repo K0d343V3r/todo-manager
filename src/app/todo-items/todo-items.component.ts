@@ -90,22 +90,22 @@ export class TodoItemsComponent implements OnInit, OnDestroy {
   public removeItem(): void {
     const item = this.itemTable.removeSelected();
 
-    // broadcast item removal
-    this.todoListService.fireItemRemoved(item);
-
     // update in server
-    this.todoItemsProxy.deleteItem(item.id).subscribe();
+    this.todoItemsProxy.deleteItem(item.id).subscribe(() => {
+      // broadcast item removal after deleted in server
+      this.todoListService.fireItemRemoved(item);
+    });
   }
 
   private onSelectedItemEdited(args: ItemEditedEventArgs): void {
-    // broadcast item update
-    this.todoListService.fireItemEdited(args);
-
     // make sure position is up to date, otherwise server may move item
     args.newItem.position = this.itemTable.selectedItemIndex;
 
     // update in server
-    this.todoItemsProxy.updateItem(args.newItem.id, args.newItem).subscribe();
+    this.todoItemsProxy.updateItem(args.newItem.id, args.newItem).subscribe(() => {
+      // broadcast item update after update in server
+      this.todoListService.fireItemEdited(args);
+    });
   }
 
   private move(up: boolean) {

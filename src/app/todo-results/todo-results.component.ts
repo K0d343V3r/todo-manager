@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { Observable, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { TodoQuery, TodoQueriesProxy, TodoQueryResults, TodoListItem, QueryOperand, ITodoListItem, TodoItemsProxy, TodoItemReference, TodoReferencesProxy, QueryOperator } from '../proxies/todo-api-proxies';
+import { TodoQuery, TodoQueriesProxy, TodoQueryResults, TodoListItem, TodoItemsProxy, TodoItemReference, TodoReferencesProxy } from '../proxies/todo-api-proxies';
 import { TodoItemTableComponent } from '../todo-item-table/todo-item-table.component';
 import { TodoQueryService } from '../services/todo-query.service';
 import { MatDialog, MatDialogConfig } from "@angular/material";
@@ -57,36 +57,24 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
   }
 
   private onSelectedItemEdited(args: ItemEditedEventArgs): void {
-    if (this.todoQueryService.inResults(this.todoQuery, args.newItem)) {
-      // edited item still meets query criteria, just update item in server
-      this.todoItemsProxy.updateItem(args.newItem.id, args.newItem).subscribe();
-    } else {
-      // edited item no longer meets query criteria, remove from list
-      this.itemTable.removeSelected();
-
-      // and update server
-      this.todoItemsProxy.updateItem(args.newItem.id, args.newItem).subscribe(() =>
-        // re-execute query to make server match client state
-        this.todoQueryService.executeQueryNoBroadcast(this.todoQuery.id).subscribe(results => {
-          this.todoReferences = results.references;
-        })
-      );
-    }
-
-    // broadcast item update
-    this.todoListService.fireItemEdited(args);
+    // update in server
+    this.todoItemsProxy.updateItem(args.newItem.id, args.newItem).subscribe(() => {
+      // broadcast item update
+      this.todoListService.fireItemEdited(args);
+    });
   }
 
   private onTodoQueryChanged(query: TodoQuery) {
     // initialize query
     this.todoQuery = query;
 
+    // TODO
     // initialize subtitle
-    if (query.operand == QueryOperand.DueDate) {
-      this.subTitle = this.dueDateService.getToday().toDateString();
-    } else {
-      this.subTitle = "";
-    }
+    //if (query.operand == QueryOperand.DueDate) {
+    // this.subTitle = this.dueDateService.getToday().toDateString();
+    //} else {
+    // this.subTitle = "";
+    //}
 
     // execute query to load item table
     this.todoQueryService.executeQuery(query.id);
@@ -123,38 +111,15 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
   }
 
   public onItemCreated(item: TodoListItem) {
-    if (this.todoQueryService.inResults(this.todoQuery, item)) {
-      // new item meets query criteria, add to list
-      this.itemTable.addItem(this.itemTable.count, item);
-
-      // re-execute query to pick up new item reference
-      this.todoQueryService.executeQueryNoBroadcast(this.todoQuery.id).subscribe(results => {
-        this.todoReferences = results.references;
-      });
-    }
+    // assume item will meet query criteria, will be removed if not after refresh
+    this.itemTable.addItem(this.itemTable.count, item);
 
     // broadcast new item addition
     this.todoListService.fireItemAdded(item);
   }
 
   private getDefaultValues(): TodoItemDialogDataValues {
-    if (this.todoQuery.operand == QueryOperand.DueDate) {
-      const date = this.todoQueryService.resolveDateValue(this.todoQuery);
-      if (this.todoQuery.operator == QueryOperator.Equals ||
-        this.todoQuery.operator == QueryOperator.GreaterThanOrEquals ||
-        this.todoQuery.operator == QueryOperator.LessThanOrEquals) {
-        return new TodoItemDialogDataValues("", date);
-      } else if (this.todoQuery.operator == QueryOperator.GreaterThan) {
-        const dayAfter = this.dueDateService.getFromDay(date, 1);
-        return new TodoItemDialogDataValues("", dayAfter);
-      } else if (this.todoQuery.operator == QueryOperator.LessThan) {
-        const dayBefore = this.dueDateService.getFromDay(date, -1);
-        return new TodoItemDialogDataValues("", dayBefore);
-      }
-    } else if (this.todoQuery.operand == QueryOperand.Important) {
-      return new TodoItemDialogDataValues("", null, this.todoQuery.boolValue);
-    }
-
+    // TODO
     return null;
   }
 
@@ -162,16 +127,11 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
     // remove from list
     const item = this.itemTable.removeSelected();
 
-    // broadcast item removal
-    this.todoListService.fireItemRemoved(item);
-
     // update in server
-    this.todoItemsProxy.deleteItem(item.id).subscribe(() =>
-      // re-execute query to fix reference positions
-      this.todoQueryService.executeQueryNoBroadcast(this.todoQuery.id).subscribe(results => {
-        this.todoReferences = results.references;
-      })
-    );
+    this.todoItemsProxy.deleteItem(item.id).subscribe(() => {
+      // broadcast item removal
+      this.todoListService.fireItemRemoved(item);
+    });
   }
 
   private move(up: boolean) {

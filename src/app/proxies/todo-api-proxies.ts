@@ -1760,11 +1760,9 @@ export interface ITodoQueryElement extends ITodoBrowsingElement {
 }
 
 export class TodoQuery extends TodoElementBase implements ITodoQuery {
-    operand!: QueryOperand;
-    operator!: QueryOperator;
-    boolValue!: boolean;
-    absoluteDateValue?: Date | undefined;
-    relativeDateValue?: number | undefined;
+    predicates?: TodoQueryPredicate[] | undefined;
+    orderBy?: QueryOperand | undefined;
+    orderByDirection?: QueryDirection | undefined;
 
     constructor(data?: ITodoQuery) {
         super(data);
@@ -1773,11 +1771,13 @@ export class TodoQuery extends TodoElementBase implements ITodoQuery {
     init(data?: any) {
         super.init(data);
         if (data) {
-            this.operand = data["operand"];
-            this.operator = data["operator"];
-            this.boolValue = data["boolValue"];
-            this.absoluteDateValue = data["absoluteDateValue"] ? new Date(data["absoluteDateValue"].toString()) : <any>undefined;
-            this.relativeDateValue = data["relativeDateValue"];
+            if (data["predicates"] && data["predicates"].constructor === Array) {
+                this.predicates = [];
+                for (let item of data["predicates"])
+                    this.predicates.push(TodoQueryPredicate.fromJS(item));
+            }
+            this.orderBy = data["orderBy"];
+            this.orderByDirection = data["orderByDirection"];
         }
     }
 
@@ -1790,11 +1790,13 @@ export class TodoQuery extends TodoElementBase implements ITodoQuery {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["operand"] = this.operand;
-        data["operator"] = this.operator;
-        data["boolValue"] = this.boolValue;
-        data["absoluteDateValue"] = this.absoluteDateValue ? this.absoluteDateValue.toISOString() : <any>undefined;
-        data["relativeDateValue"] = this.relativeDateValue;
+        if (this.predicates && this.predicates.constructor === Array) {
+            data["predicates"] = [];
+            for (let item of this.predicates)
+                data["predicates"].push(item.toJSON());
+        }
+        data["orderBy"] = this.orderBy;
+        data["orderByDirection"] = this.orderByDirection;
         super.toJSON(data);
         return data; 
     }
@@ -1808,16 +1810,83 @@ export class TodoQuery extends TodoElementBase implements ITodoQuery {
 }
 
 export interface ITodoQuery extends ITodoElementBase {
-    operand: QueryOperand;
-    operator: QueryOperator;
-    boolValue: boolean;
+    predicates?: TodoQueryPredicate[] | undefined;
+    orderBy?: QueryOperand | undefined;
+    orderByDirection?: QueryDirection | undefined;
+}
+
+export class TodoQueryPredicate extends EntityBase implements ITodoQueryPredicate {
+    operand!: QueryOperand;
+    operator!: QueryOperator;
+    boolValue?: boolean | undefined;
     absoluteDateValue?: Date | undefined;
     relativeDateValue?: number | undefined;
+    keyword?: QueryKeyword | undefined;
+    group?: QueryPredicateGroup | undefined;
+    todoQueryId!: number;
+
+    constructor(data?: ITodoQueryPredicate) {
+        super(data);
+    }
+
+    init(data?: any) {
+        super.init(data);
+        if (data) {
+            this.operand = data["operand"];
+            this.operator = data["operator"];
+            this.boolValue = data["boolValue"];
+            this.absoluteDateValue = data["absoluteDateValue"] ? new Date(data["absoluteDateValue"].toString()) : <any>undefined;
+            this.relativeDateValue = data["relativeDateValue"];
+            this.keyword = data["keyword"];
+            this.group = data["group"];
+            this.todoQueryId = data["todoQueryId"];
+        }
+    }
+
+    static fromJS(data: any): TodoQueryPredicate {
+        data = typeof data === 'object' ? data : {};
+        let result = new TodoQueryPredicate();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["operand"] = this.operand;
+        data["operator"] = this.operator;
+        data["boolValue"] = this.boolValue;
+        data["absoluteDateValue"] = this.absoluteDateValue ? this.absoluteDateValue.toISOString() : <any>undefined;
+        data["relativeDateValue"] = this.relativeDateValue;
+        data["keyword"] = this.keyword;
+        data["group"] = this.group;
+        data["todoQueryId"] = this.todoQueryId;
+        super.toJSON(data);
+        return data; 
+    }
+
+    clone(): TodoQueryPredicate {
+        const json = this.toJSON();
+        let result = new TodoQueryPredicate();
+        result.init(json);
+        return result;
+    }
+}
+
+export interface ITodoQueryPredicate extends IEntityBase {
+    operand: QueryOperand;
+    operator: QueryOperator;
+    boolValue?: boolean | undefined;
+    absoluteDateValue?: Date | undefined;
+    relativeDateValue?: number | undefined;
+    keyword?: QueryKeyword | undefined;
+    group?: QueryPredicateGroup | undefined;
+    todoQueryId: number;
 }
 
 export enum QueryOperand {
     DueDate = 0, 
     Important = 1, 
+    Done = 2, 
 }
 
 export enum QueryOperator {
@@ -1827,6 +1896,21 @@ export enum QueryOperator {
     GreaterThanOrEquals = 3, 
     LessThan = 4, 
     LessThanOrEquals = 5, 
+}
+
+export enum QueryKeyword {
+    And = 0, 
+    Or = 1, 
+}
+
+export enum QueryPredicateGroup {
+    Begin = 0, 
+    End = 1, 
+}
+
+export enum QueryDirection {
+    Ascending = 0, 
+    Descending = 1, 
 }
 
 export class TodoListItem extends EntityBase implements ITodoListItem {

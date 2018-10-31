@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { TodoQuery, TodoQueryElement, TodoQueriesProxy, TodoElement, TodoElementsProxy, QueryOperand, QueryOperator, TodoListItem, TodoQueryResults } from '../proxies/todo-api-proxies';
+import { TodoQuery, TodoQueryElement, TodoQueriesProxy, TodoElement, TodoElementsProxy, QueryOperand, QueryOperator, TodoListItem, TodoQueryResults, TodoQueryPredicate, QueryDirection, QueryKeyword, QueryPredicateGroup } from '../proxies/todo-api-proxies';
 import { Router } from "@angular/router";
 import { TodoListService, ItemEditedEventArgs } from "../services/todo-list.service";
 import { TodoQueryService } from '../services/todo-query.service';
@@ -30,10 +30,25 @@ export class TodoQueriesComponent implements OnInit {
     element.query = new TodoQuery();
     element.query.id = element.id;
     element.query.name = element.name;
-    element.query.operand = QueryOperand.DueDate;
-    element.query.operator = QueryOperator.LessThanOrEquals;
-    element.query.absoluteDateValue = dueDateService.defaultDate;
-    element.query.relativeDateValue = 0;    // items due today or earlier
+    element.query.predicates = [];
+    element.query.predicates.push(new TodoQueryPredicate());
+    element.query.predicates[0].operand = QueryOperand.DueDate;
+    element.query.predicates[0].operator = QueryOperator.Equals;
+    element.query.predicates[0].relativeDateValue = 0;    // items due today, or
+    element.query.predicates[0].keyword = QueryKeyword.Or;
+    element.query.predicates.push(new TodoQueryPredicate());
+    element.query.predicates[1].group = QueryPredicateGroup.Begin;
+    element.query.predicates[1].operand = QueryOperand.DueDate;
+    element.query.predicates[1].operator = QueryOperator.LessThan;
+    element.query.predicates[1].relativeDateValue = 0;    // items due earlier than today, and
+    element.query.predicates[1].keyword = QueryKeyword.And;
+    element.query.predicates.push(new TodoQueryPredicate());
+    element.query.predicates[2].group = QueryPredicateGroup.End;
+    element.query.predicates[2].operand = QueryOperand.Done;
+    element.query.predicates[2].operator = QueryOperator.Equals;
+    element.query.predicates[2].boolValue = false;        // not done
+    element.query.orderBy = QueryOperand.DueDate;
+    element.query.orderByDirection = QueryDirection.Descending;
     this.queryElements.push(element);
     this.queryElementIcons.push("wb_sunny");
 
@@ -44,9 +59,12 @@ export class TodoQueriesComponent implements OnInit {
     element.query = new TodoQuery();
     element.query.id = element.id;
     element.query.name = element.name;
-    element.query.operand = QueryOperand.Important;
-    element.query.operator = QueryOperator.Equals;
-    element.query.boolValue = true;
+    element.query.predicates = [];
+    element.query.predicates.push(new TodoQueryPredicate());
+    element.query.predicates[0].operand = QueryOperand.Important;
+    element.query.predicates[0].operator = QueryOperator.Equals;
+    element.query.predicates[0].boolValue = true;
+    element.query.orderBy = QueryOperand.Important;
     this.queryElements.push(element);
     this.queryElementIcons.push("star_border");
 
@@ -57,10 +75,12 @@ export class TodoQueriesComponent implements OnInit {
     element.query = new TodoQuery();
     element.query.id = element.id;
     element.query.name = element.name;
-    element.query.operand = QueryOperand.DueDate;
-    element.query.operator = QueryOperator.GreaterThan;
-    element.query.absoluteDateValue = dueDateService.defaultDate;
-    element.query.relativeDateValue = 0;    // items due later than today
+    element.query.predicates = [];
+    element.query.predicates.push(new TodoQueryPredicate());
+    element.query.predicates[0].operand = QueryOperand.DueDate;
+    element.query.predicates[0].operator = QueryOperator.GreaterThan;
+    element.query.predicates[0].relativeDateValue = 0;    // items due later than today
+    element.query.orderBy = QueryOperand.DueDate;
     this.queryElements.push(element);
     this.queryElementIcons.push("calendar_today");
 
@@ -135,28 +155,12 @@ export class TodoQueriesComponent implements OnInit {
       }
     }
 
-    this.queryElements.forEach(element => this.checkQueryCountsEdit(element, args));
+    this.updateQueryCounts();
   }
 
-  private checkQueryCountsEdit(element: TodoQueryElement, args: ItemEditedEventArgs) {
-    const wasInResults = this.todoQueryService.inResults(element.query, args.oldItem);
-    const isInResults = this.todoQueryService.inResults(element.query, args.newItem);
-
-    if (wasInResults && isInResults) {
-      if (args.oldItem.done && !args.newItem.done) {
-        element.remainingCount++;
-      } else if (!args.oldItem.done && args.newItem.done) {
-        element.remainingCount--;
-      }
-    } else if (!wasInResults && isInResults) {
-      if (!args.newItem.done) {
-        element.remainingCount++;
-      }
-    } else if (wasInResults && !isInResults) {
-      if (!args.oldItem.done) {
-        element.remainingCount--;
-      }
-    }
+  private updateQueryCounts() {
+    // the set of list items has changed, re-execute all queries
+    this.queryElements.forEach(q => this.todoQueryService.executeQuery(q.id));
   }
 
   private onQueryExecuted(results: TodoQueryResults) {
@@ -177,18 +181,6 @@ export class TodoQueriesComponent implements OnInit {
       }
     }
 
-    this.queryElements.forEach(e => this.checkQueryCounts(e, item, add));
-  }
-
-  private checkQueryCounts(element: TodoQueryElement, item: TodoListItem, add: boolean) {
-    if (!item.done) {
-      // we only track remaining tasks (not done)
-      const inResults = this.todoQueryService.inResults(element.query, item);
-      if (inResults && add) {
-        element.remainingCount++;
-      } else if (inResults && !add) {
-        element.remainingCount--;
-      }
-    }
+    this.updateQueryCounts();
   }
 }
