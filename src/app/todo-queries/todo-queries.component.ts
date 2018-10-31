@@ -4,6 +4,7 @@ import { Router } from "@angular/router";
 import { TodoListService, ItemEditedEventArgs } from "../services/todo-list.service";
 import { TodoQueryService } from '../services/todo-query.service';
 import { DueDateService } from '../services/due-date.service'
+import { TodoItemDialogDataValues } from '../todo-item-dialog/todo-item-dialog.component'
 
 @Component({
   selector: 'app-todo-queries',
@@ -51,6 +52,9 @@ export class TodoQueriesComponent implements OnInit {
     element.query.orderByDirection = QueryDirection.Descending;
     this.queryElements.push(element);
     this.queryElementIcons.push("wb_sunny");
+    todoQueryService.registerDefaultValueCallback(element.id, (): TodoItemDialogDataValues =>  {
+      return new TodoItemDialogDataValues("", this.dueDateService.getToday(), false);
+    });
 
     // followed by important query
     element = new TodoQueryElement();
@@ -67,6 +71,9 @@ export class TodoQueriesComponent implements OnInit {
     element.query.orderBy = QueryOperand.Important;
     this.queryElements.push(element);
     this.queryElementIcons.push("star_border");
+    todoQueryService.registerDefaultValueCallback(element.id, (): TodoItemDialogDataValues =>  {
+      return new TodoItemDialogDataValues("", this.dueDateService.getToday(), true);
+    });
 
     // followed by planned query
     element = new TodoQueryElement();
@@ -83,6 +90,9 @@ export class TodoQueriesComponent implements OnInit {
     element.query.orderBy = QueryOperand.DueDate;
     this.queryElements.push(element);
     this.queryElementIcons.push("calendar_today");
+    todoQueryService.registerDefaultValueCallback(element.id, (): TodoItemDialogDataValues =>  {
+      return new TodoItemDialogDataValues("", this.dueDateService.getFromToday(1), true);
+    });
 
     this.myTasksElement = new TodoElement();
     this.myTasksElement.id = 1;

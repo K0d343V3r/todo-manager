@@ -92,7 +92,7 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
-    dialogConfig.data = new TodoItemDialogData(true, this.getDefaultValues());
+    dialogConfig.data = new TodoItemDialogData(true, this.todoQueryService.getQueryDefaultValues(this.todoQuery.id));
 
     const dialogRef = this.dialog.open(TodoItemDialogComponent, dialogConfig);
 
@@ -116,11 +116,6 @@ export class TodoResultsComponent implements OnInit, OnDestroy {
 
     // broadcast new item addition
     this.todoListService.fireItemAdded(item);
-  }
-
-  private getDefaultValues(): TodoItemDialogDataValues {
-    // TODO
-    return null;
   }
 
   public removeItem(): void {
