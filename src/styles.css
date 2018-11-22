@@ -1,8 +1,5 @@
 @import '~@angular/material/prebuilt-themes/indigo-pink.css';
 
-html, body { height: 100%; }
-body { margin: 0; font-family: 'Roboto', sans-serif; }
-
 /* left side icon for all list entries */
 .mat-nav-list .list-entry-icon {
   margin-left: -10px;
