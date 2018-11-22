@@ -6,3 +6,7 @@
     right: 0;
     background: #eee;
   }
+
+  mat-sidenav {
+    width: 300px;
+  }
